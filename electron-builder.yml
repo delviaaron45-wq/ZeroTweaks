@@ -1,0 +1,65 @@
+# Electron Builder Configuration
+#
+# The `files` list below is deliberately narrow. An earlier version used
+# `dist/**`, which swept the whole output folder into the asar — including the
+# previous `dist/win-unpacked` build (Electron binaries nested inside their own
+# installer) and the full `node_modules` tree. That produced a ~923 MB installer.
+#
+# The app only needs four compiled output folders at runtime:
+#   dist/main      - main process (package.json "main")
+#   dist/preload   - preload bridge, loaded via join(__dirname, "../../preload")
+#   dist/renderer  - Vite bundle (index.html + assets)
+#   dist/shared    - shared utils imported by main ("../shared/...")
+appId: com.zerotweaks.app
+productName: ZeroTweaks
+copyright: "Copyright © 2024 ZeroTweaks Team"
+
+directories:
+  output: dist
+  buildResources: build
+
+# Ship only the compiled runtime. "!" excludes keep the previous build output,
+# source maps and the unpacked Electron tree out of the asar.
+files:
+  - package.json
+  - dist/main/**/*
+  - dist/preload/**/*
+  - dist/renderer/**/*
+  - dist/shared/**/*
+  - "!dist/main/**/*.map"
+  - "!dist/preload/**/*.map"
+  - "!dist/shared/**/*.map"
+  - "!dist/win-unpacked/**/*"
+  - "!dist/*.exe"
+  - "!dist/*.blockmap"
+  - "!dist/*.7z"
+  - "!dist/*.yml"
+
+asar: true
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+  requestedExecutionLevel: requireAdministrator
+  icon: resources/icons/icon.ico
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: ZeroTweaks
+  include: build/installer.nsh
+  license: LICENSE
+  deleteAppDataOnUninstall: false
+  runAfterFinish: true
+
+portable:
+  artifactName: ZeroTweaks-${version}-portable.${ext}
+
+artifactName: ZeroTweaks-${version}-${os}-${arch}.${ext}

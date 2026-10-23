@@ -1,0 +1,45 @@
+[package]
+name = "zerotweaks_native"
+version = "1.0.0"
+edition = "2021"
+description = "Native module for ZeroTweaks - timer resolution, DPC latency, GPU/CPU metrics"
+authors = ["ZeroTweaks Team"]
+license = "MIT"
+repository = "https://github.com/zerotweaks/zerotweaks"
+
+[lib]
+name = "zerotweaks_native"
+crate-type = ["cdylib"]
+
+[dependencies]
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_System_Threading",
+    "Win32_System_SystemInformation",
+    "Win32_System_Performance",
+    "Win32_System_Diagnostics_Debug",
+    "Win32_System_Diagnostics_Performance",
+    "Win32_System_Power",
+    "Win32_Graphics_Direct3D11",
+    "Win32_Graphics_Dxgi",
+    "Win32_System_Registry",
+] }
+ntapi = "0.4"
+pdht = "0.1"
+wmi = "0.6"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+anyhow = "1.0"
+log = "0.4"
+env_logger = "0.10"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.release-with-debug]
+inherits = "release"
+debug = true
