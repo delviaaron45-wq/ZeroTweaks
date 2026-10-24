@@ -95,17 +95,63 @@ export function setupIpcHandlers(deps: IpcDependencies): void {
     return refreshHardwareCache();
   }
 
+  /**
+   * Reads the hardware profile that is already cached (memory or disk) without
+   * triggering the slow detection. Used to explain why a tweak does not apply
+   * on this specific machine (wrong GPU/CPU vendor, laptop-only...).
+   */
+  async function peekHardware(): Promise<HardwareProfile | null> {
+    if (hardwareCache) return hardwareCache.profile;
+    try {
+      const disk = await readJson<{ profile: HardwareProfile; at: number }>(HARDWARE_CACHE_FILE);
+      if (disk?.profile) {
+        hardwareCache = { profile: disk.profile, at: disk.at };
+        return disk.profile;
+      }
+    } catch {
+      // No hardware has been detected yet on this machine.
+    }
+    return null;
+  }
+
+  /**
+   * Turns the declarative compatibility of a tweak into an explicit reason when
+   * the machine does not match it, so the UI disables it instead of offering an
+   * action that could never work here.
+   */
+  function hardwareMismatchReason(tweak: Tweak, hardware: HardwareProfile | null): string | undefined {
+    if (!hardware) return undefined;
+    const { gpuVendors, cpuVendors, formFactors } = tweak.compatibility;
+
+    if (!formFactors.includes(hardware.isLaptop ? 'laptop' : 'desktop')) {
+      const wanted = formFactors.map(f => (f === 'laptop' ? 'portátiles' : 'sobremesa')).join(' o ');
+      return `No aplicable: está pensado para ${wanted} y este equipo es un ${hardware.isLaptop ? 'portátil' : 'sobremesa'}.`;
+    }
+    if (gpuVendors?.length && hardware.gpu.vendor !== 'Unknown' && !gpuVendors.includes(hardware.gpu.vendor)) {
+      return `No aplicable: requiere GPU ${gpuVendors.join(' o ')} y la detectada es ${hardware.gpu.vendor} (${hardware.gpu.model}).`;
+    }
+    if (cpuVendors?.length && hardware.cpu.vendor !== 'Unknown' && !cpuVendors.includes(hardware.cpu.vendor)) {
+      return `No aplicable: requiere CPU ${cpuVendors.join(' o ')} y la detectada es ${hardware.cpu.vendor}.`;
+    }
+    return undefined;
+  }
+
   // Tweak operations
   ipcMain.handle('tweak:list', async () => {
+    const hardware = await peekHardware();
     return allTweaks.map(t => ({
       id: t.id,
       name: t.name,
+      nameKey: t.nameKey,
       category: t.category,
       description: t.description,
+      descriptionKey: t.descriptionKey,
       whenHelps: t.whenHelps,
+      whenHelpsKey: t.whenHelpsKey,
       risk: t.risk,
       evidence: t.evidence,
       impacto: t.impacto,
+      unavailableReason: t.unavailableReason ?? hardwareMismatchReason(t, hardware),
       requiresReboot: t.requiresReboot,
       compatibility: t.compatibility,
     }));
@@ -117,12 +163,16 @@ export function setupIpcHandlers(deps: IpcDependencies): void {
     return {
       id: tweak.id,
       name: tweak.name,
+      nameKey: tweak.nameKey,
       category: tweak.category,
       description: tweak.description,
+      descriptionKey: tweak.descriptionKey,
       whenHelps: tweak.whenHelps,
+      whenHelpsKey: tweak.whenHelpsKey,
       risk: tweak.risk,
       evidence: tweak.evidence,
       impacto: tweak.impacto,
+      unavailableReason: tweak.unavailableReason ?? hardwareMismatchReason(tweak, await peekHardware()),
       requiresReboot: tweak.requiresReboot,
       compatibility: tweak.compatibility,
     };
@@ -140,7 +190,7 @@ export function setupIpcHandlers(deps: IpcDependencies): void {
 
     // Log journal entry before applying
     const currentState = await tweak.detect();
-    await journalManager.logEntry({
+    const entry = await journalManager.logEntry({
       tweakId,
       action: 'apply',
       previousState: currentState,
@@ -151,24 +201,13 @@ export function setupIpcHandlers(deps: IpcDependencies): void {
     try {
       const result = await tweak.apply(options);
       if (result.ok) {
-        await journalManager.markEntryComplete(
-          (await journalManager.getJournal()).findLast(e => e.tweakId === tweakId && !e.success)!.id,
-          true
-        );
+        await journalManager.markEntryComplete(entry.id, true, undefined, await tweak.detect());
       } else {
-        await journalManager.markEntryComplete(
-          (await journalManager.getJournal()).findLast(e => e.tweakId === tweakId && !e.success)!.id,
-          false,
-          result.error
-        );
+        await journalManager.markEntryComplete(entry.id, false, result.error);
       }
       return result;
     } catch (error: any) {
-      await journalManager.markEntryComplete(
-        (await journalManager.getJournal()).findLast(e => e.tweakId === tweakId && !e.success)!.id,
-        false,
-        error.message
-      );
+      await journalManager.markEntryComplete(entry.id, false, error.message);
       return { ok: false, error: error.message };
     }
   });
@@ -177,7 +216,7 @@ export function setupIpcHandlers(deps: IpcDependencies): void {
     const tweak = getTweakById(tweakId);
     if (!tweak) throw new Error(`Tweak not found: ${tweakId}`);
 
-    await journalManager.logEntry({
+    const entry = await journalManager.logEntry({
       tweakId,
       action: 'revert',
       previousState: originalState,
@@ -188,13 +227,13 @@ export function setupIpcHandlers(deps: IpcDependencies): void {
     try {
       const result = await tweak.revert(originalState);
       if (result.ok) {
-        await journalManager.markEntryComplete(
-          (await journalManager.getJournal()).findLast(e => e.tweakId === tweakId && e.action === 'revert' && !e.success)!.id,
-          true
-        );
+        await journalManager.markEntryComplete(entry.id, true);
+      } else {
+        await journalManager.markEntryComplete(entry.id, false, result.error);
       }
       return result;
     } catch (error: any) {
+      await journalManager.markEntryComplete(entry.id, false, error.message);
       return { ok: false, error: error.message };
     }
   });
@@ -748,7 +787,7 @@ function getDefaultSettings(): Settings {
     minimizeToTray: true,
     checkUpdates: true,
     telemetryOptIn: false,
-    dryRunDefault: true,
+    dryRunDefault: false,
     batterySaverMode: false,
     gameModeAuto: true,
     overlay: {

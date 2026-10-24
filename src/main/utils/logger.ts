@@ -1,5 +1,6 @@
 // Logger utility
 import { getLogsDir } from '../../shared/utils/files';
+import { isDev } from './env';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -91,8 +92,9 @@ class Logger {
     };
     this.logQueue.push(entry);
 
-    // Also log to console in development
-    if (process.env.NODE_ENV !== 'production') {
+    // Also log to console while running from source (the packaged app has no
+    // console attached, so this only matters during development).
+    if (isDev) {
       const prefix = `[${entry.timestamp}] [${level.toUpperCase()}]`;
       switch (level) {
         case 'debug':

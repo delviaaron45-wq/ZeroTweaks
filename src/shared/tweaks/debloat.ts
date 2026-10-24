@@ -1,6 +1,6 @@
 import type { Tweak, TweakState, TweakResult, ApplyOptions } from '../types/all';
 import { RegistryManager } from './registry';
-import { execAsync, execPowerShellJson } from '../utils/process';
+import { execAsync, execPowerShell, execPowerShellJson } from '../utils/process';
 
 // Debloat & Privacy Tweaks (50 + 45 target)
 
@@ -24,9 +24,12 @@ export const PROTECTED_PACKAGES = [
 export const removeBloatware: Tweak = {
   id: 'debloat.remove_apps',
   name: 'Remove Pre-installed Bloatware Apps',
+  nameKey: 'tweaks.debloat.removeApps.name',
   category: 'debloat_apps',
   description: 'Removes selected pre-installed Appx packages (Candy Crush, News, Weather, etc.) via Remove-AppxPackage and Remove-AppxProvisionedPackage. Protected list excluded.',
+  descriptionKey: 'tweaks.debloat.removeApps.description',
   whenHelps: 'Frees disk space, reduces background processes, cleans Start menu. Only removes user-selected apps.',
+  whenHelpsKey: 'tweaks.debloat.removeApps.whenHelps',
   risk: 'moderate',
   evidence: 'measured',
   impacto: 'medio',
@@ -65,9 +68,12 @@ export const removeBloatware: Tweak = {
 export const disableTelemetry: Tweak = {
   id: 'privacy.telemetry_minimum',
   name: 'Set Telemetry to Minimum (Required)',
+  nameKey: 'tweaks.privacy.telemetry.name',
   category: 'privacy_telemetry',
   description: 'Sets AllowTelemetry=1 in HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection. Minimum allowed on Home/Pro. Does not disable DiagTrack service.',
+  descriptionKey: 'tweaks.privacy.telemetry.description',
   whenHelps: 'Reduces data sent to Microsoft. Required level on Home/Pro. Enterprise/Education can set 0.',
+  whenHelpsKey: 'tweaks.privacy.telemetry.whenHelps',
   risk: 'safe',
   evidence: 'measured',
   impacto: 'bajo',
@@ -113,9 +119,12 @@ export const disableTelemetry: Tweak = {
 export const disableDiagTrack: Tweak = {
   id: 'privacy.diagtrack',
   name: 'Disable DiagTrack Service (Connected User Experiences)',
+  nameKey: 'tweaks.privacy.diagTrack.name',
   category: 'privacy_telemetry',
   description: 'Sets DiagTrack service startup to Disabled. Backs up original state. Reduces telemetry collection.',
+  descriptionKey: 'tweaks.privacy.diagTrack.description',
   whenHelps: 'Stops Connected User Experiences and Telemetry service. May affect Feedback Hub, some diagnostics.',
+  whenHelpsKey: 'tweaks.privacy.diagTrack.whenHelps',
   risk: 'moderate',
   evidence: 'measured',
   impacto: 'medio',
@@ -125,8 +134,10 @@ export const disableDiagTrack: Tweak = {
     formFactors: ['desktop', 'laptop'],
   },
   detect: async (): Promise<TweakState> => {
-    const { stdout } = await execAsync('powershell -NoProfile -Command "Get-Service DiagTrack | Select-Object StartType, Status | ConvertTo-Json"');
-    const info = stdout.trim() ? JSON.parse(stdout) : { StartType: 'Unknown', Status: 'Unknown' };
+    const info = await execPowerShellJson(
+      'Get-Service DiagTrack | Select-Object StartType, Status | ConvertTo-Json',
+      { StartType: 'Unknown', Status: 'Unknown' }
+    );
     return { path: 'SERVICE', name: 'DiagTrack', type: 'REG_SZ', value: info, existed: true };
   },
   apply: async (options?: ApplyOptions): Promise<TweakResult> => {
@@ -163,9 +174,12 @@ export const disableDiagTrack: Tweak = {
 export const disableDmwappush: Tweak = {
   id: 'privacy.dmwappush',
   name: 'Disable dmwappushservice (WAP Push Message Routing)',
+  nameKey: 'tweaks.privacy.dmwappush.name',
   category: 'privacy_telemetry',
   description: 'Sets dmwappushservice startup to Disabled. Used for enterprise push notifications.',
+  descriptionKey: 'tweaks.privacy.dmwappush.description',
   whenHelps: 'Reduces background network activity. Not needed on consumer devices.',
+  whenHelpsKey: 'tweaks.privacy.dmwappush.whenHelps',
   risk: 'safe',
   evidence: 'measured',
   impacto: 'bajo',
@@ -175,8 +189,10 @@ export const disableDmwappush: Tweak = {
     formFactors: ['desktop', 'laptop'],
   },
   detect: async (): Promise<TweakState> => {
-    const { stdout } = await execAsync('powershell -NoProfile -Command "Get-Service dmwappushservice | Select-Object StartType, Status | ConvertTo-Json"');
-    const info = stdout.trim() ? JSON.parse(stdout) : { StartType: 'Unknown', Status: 'Unknown' };
+    const info = await execPowerShellJson(
+      'Get-Service dmwappushservice | Select-Object StartType, Status | ConvertTo-Json',
+      { StartType: 'Unknown', Status: 'Unknown' }
+    );
     return { path: 'SERVICE', name: 'dmwappushservice', type: 'REG_SZ', value: info, existed: true };
   },
   apply: async (options?: ApplyOptions): Promise<TweakResult> => {
@@ -213,9 +229,12 @@ export const disableDmwappush: Tweak = {
 export const disableAdvertisingId: Tweak = {
   id: 'privacy.advertising_id',
   name: 'Disable Advertising ID',
+  nameKey: 'tweaks.privacy.advertisingId.name',
   category: 'privacy_telemetry',
   description: 'Sets EnableAdvertisingId=0 in HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo. Resets per user.',
+  descriptionKey: 'tweaks.privacy.advertisingId.description',
   whenHelps: 'Prevents apps from using advertising ID for personalized ads.',
+  whenHelpsKey: 'tweaks.privacy.advertisingId.whenHelps',
   risk: 'safe',
   evidence: 'measured',
   impacto: 'bajo',
@@ -260,9 +279,12 @@ export const disableAdvertisingId: Tweak = {
 export const disableTailoredExperiences: Tweak = {
   id: 'privacy.tailored_experiences',
   name: 'Disable Tailored Experiences',
+  nameKey: 'tweaks.privacy.tailoredExperiences.name',
   category: 'privacy_telemetry',
   description: 'Sets SubscribedContent-310093Enabled=0 and SubscribedContent-338387Enabled=0 in HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager.',
+  descriptionKey: 'tweaks.privacy.tailoredExperiences.description',
   whenHelps: 'Stops suggested apps, tips, and tailored content in Start/Shell.',
+  whenHelpsKey: 'tweaks.privacy.tailoredExperiences.whenHelps',
   risk: 'safe',
   evidence: 'measured',
   impacto: 'bajo',
@@ -326,9 +348,12 @@ export const disableTailoredExperiences: Tweak = {
 export const disableLocation: Tweak = {
   id: 'privacy.location',
   name: 'Disable Location Tracking',
+  nameKey: 'tweaks.privacy.locationTracking.name',
   category: 'privacy_telemetry',
   description: 'Sets Location=0 in HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors. Disables location for all users.',
+  descriptionKey: 'tweaks.privacy.locationTracking.description',
   whenHelps: 'Prevents Windows and apps from accessing location. May affect Maps, Weather, Find My Device.',
+  whenHelpsKey: 'tweaks.privacy.locationTracking.whenHelps',
   risk: 'safe',
   evidence: 'measured',
   impacto: 'bajo',
@@ -374,9 +399,12 @@ export const disableLocation: Tweak = {
 export const disableCortanaWeb: Tweak = {
   id: 'privacy.cortana_web',
   name: 'Disable Cortana Web Search / Search Box Web Results',
+  nameKey: 'tweaks.privacy.cortanaWeb.name',
   category: 'privacy_telemetry',
   description: 'Sets AllowSearchToUseLocation=0, DisableWebSearch=1, ConnectedSearchUseForm=0 in HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer.',
+  descriptionKey: 'tweaks.privacy.cortanaWeb.description',
   whenHelps: 'Keeps search local. Prevents Bing web results in Start/Search. Cortana deprecated in Win11.',
+  whenHelpsKey: 'tweaks.privacy.cortanaWeb.whenHelps',
   risk: 'safe',
   evidence: 'measured',
   impacto: 'bajo',
@@ -438,9 +466,12 @@ export const disableCortanaWeb: Tweak = {
 export const disableActivityHistory: Tweak = {
   id: 'privacy.activity_history',
   name: 'Disable Activity History (Timeline)',
+  nameKey: 'tweaks.privacy.activityHistory.name',
   category: 'privacy_telemetry',
   description: 'Sets PublishUserActivities=0, UploadUserActivities=0 in HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\System.',
+  descriptionKey: 'tweaks.privacy.activityHistory.description',
   whenHelps: 'Disables Timeline/Task View cross-device history. Reduces cloud sync.',
+  whenHelpsKey: 'tweaks.privacy.activityHistory.whenHelps',
   risk: 'safe',
   evidence: 'measured',
   impacto: 'bajo',
@@ -502,9 +533,12 @@ export const disableActivityHistory: Tweak = {
 export const disableOneDriveAutoStart: Tweak = {
   id: 'debloat.onedrive_autostart',
   name: 'Disable OneDrive Auto-start',
+  nameKey: 'tweaks.debloat.oneDriveAutostart.name',
   category: 'debloat_apps',
   description: 'Removes OneDrive from Run key and disables autostart in OneDrive settings. Does not uninstall.',
+  descriptionKey: 'tweaks.debloat.oneDriveAutostart.description',
   whenHelps: 'Prevents OneDrive from running at login if not used. Saves RAM/CPU.',
+  whenHelpsKey: 'tweaks.debloat.oneDriveAutostart.whenHelps',
   risk: 'safe',
   evidence: 'measured',
   impacto: 'bajo',
@@ -556,16 +590,87 @@ export const disableOneDriveAutoStart: Tweak = {
   },
 };
 
-// 11. Disable Startup Apps (Task Manager list)
+// 11. Clean orphaned Startup entries
+//
+// What this really does (and the only thing it does): removes the autostart
+// entries from the Run keys whose target program no longer exists, i.e. the
+// leftovers that accumulate when apps are uninstalled without cleaning up. That
+// is a real, measurable boot improvement and it can never break a working
+// program: entries that point to an existing executable are left untouched.
+// Everything removed is written to a backup file and can be restored.
+interface StartupEntry {
+  path: string;
+  name: string;
+  command: string;
+  exe: string | null;
+  dead: boolean;
+}
+
+interface StartupSnapshot {
+  entries: StartupEntry[];
+}
+
+const RUN_KEY_PATHS = [
+  'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run',
+  'HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run',
+  'HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run',
+];
+
+/** PowerShell that enumerates every Run entry and flags the ones with no target. */
+function startupEnumerationScript(): string {
+  return `
+    $paths = @(${RUN_KEY_PATHS.map(p => `'${p}'`).join(',')})
+    $entries = @()
+    foreach ($p in $paths) {
+      if (-not (Test-Path $p)) { continue }
+      $item = Get-ItemProperty -Path $p -ErrorAction SilentlyContinue
+      if (-not $item) { continue }
+      foreach ($prop in $item.PSObject.Properties) {
+        if ($prop.Name -like 'PS*') { continue }
+        $cmd = "$($prop.Value)"
+        $exe = $null
+        if ($cmd -match '^\\s*"([^"]+)"') { $exe = $Matches[1] }
+        elseif ($cmd -match '^\\s*([^\\s]+)') { $exe = $Matches[1] }
+        if ($exe) { $exe = [Environment]::ExpandEnvironmentVariables($exe) }
+        $dead = $false
+        if ($exe -and $exe -match '\\.(exe|bat|cmd|vbs|com|lnk)$') { $dead = -not (Test-Path $exe) }
+        $entries += @{ Path = $p; Name = $prop.Name; Command = $cmd; Exe = $exe; Dead = [bool]$dead }
+      }
+    }
+    @{ Entries = @($entries) } | ConvertTo-Json -Depth 4
+  `;
+}
+
+async function readStartupEntries(): Promise<StartupEntry[]> {
+  const parsed = await execPowerShellJson<{ Entries?: unknown[] }>(startupEnumerationScript(), { Entries: [] });
+  const list = parsed?.Entries;
+  if (!list) return [];
+  const raw = Array.isArray(list) ? list : [list];
+  // PowerShell serialises hashtable keys as-is (Path, Name...), so the
+  // PascalCase payload is normalised to the camelCase shape used here.
+  return raw.map((e: any): StartupEntry => ({
+    path: String(e?.Path ?? ''),
+    name: String(e?.Name ?? ''),
+    command: String(e?.Command ?? ''),
+    exe: e?.Exe ? String(e.Exe) : null,
+    dead: e?.Dead === true,
+  }));
+}
+
 export const manageStartupApps: Tweak = {
   id: 'debloat.startup_apps',
-  name: 'Manage Startup Applications',
+  name: 'Remove Orphaned Startup Entries',
+  nameKey: 'tweaks.debloat.startupApps.name',
   category: 'debloat_apps',
-  description: 'Lists and allows disabling startup entries from Run keys, Task Scheduler, and Services. Shows estimated impact.',
-  whenHelps: 'Reduces boot time, frees RAM. Interactive selection in UI.',
+  description:
+    'Lists every autostart entry (HKCU/HKLM Run keys) and removes only the ones whose program no longer exists — the leftovers uninstalled apps leave behind. Working entries are never touched, and every removal is backed up so it can be restored.',
+  descriptionKey: 'tweaks.debloat.startupApps.description',
+  whenHelps:
+    'Shortens boot time and removes error/no-op launches caused by uninstalled programs. It cannot break anything: an entry is only removed when its executable is missing.',
+  whenHelpsKey: 'tweaks.debloat.startupApps.whenHelps',
   risk: 'safe',
   evidence: 'measured',
-  impacto: 'bajo',
+  impacto: 'medio',
   requiresReboot: false,
   compatibility: {
     windowsVersions: ['10.0.19041', '10.0.22000', '10.0.22621', '10.0.22631'],
@@ -575,21 +680,124 @@ export const manageStartupApps: Tweak = {
     // Defensive parse (see removeApps): cmd.exe mangles this pipeline's
     // metacharacters and a bare JSON.parse turned that into a page-breaking
     // SyntaxError. execPowerShellJson degrades to [] instead.
-    const apps = await execPowerShellJson<unknown[]>(
-      'Get-CimInstance Win32_StartupCommand | Select-Object Name, Command, Location, User | ConvertTo-Json',
-      []
-    );
-    return { path: 'STARTUP', name: 'StartupApps', type: 'REG_SZ', value: apps, existed: true };
+    const entries = await readStartupEntries();
+    return {
+      path: 'STARTUP',
+      name: 'StartupApps',
+      type: 'REG_SZ',
+      value: { entries } satisfies StartupSnapshot,
+      existed: true,
+    };
   },
   apply: async (options?: ApplyOptions): Promise<TweakResult> => {
-    if (options?.dryRun) return { ok: true, data: 'Would disable selected startup apps (UI-driven)' };
-    return { ok: true, data: 'Use UI to manage startup apps' };
+    const before = await readStartupEntries();
+    const dead = before.filter(e => e.dead);
+
+    if (options?.dryRun) {
+      return {
+        ok: true,
+        data:
+          dead.length === 0
+            ? 'No hay entradas de inicio huérfanas: no se cambiaría nada.'
+            : `Se retirarían ${dead.length} entrada(s) de inicio cuyo programa ya no existe.`,
+      };
+    }
+    if (dead.length === 0) {
+      return { ok: true, data: 'No hay entradas de inicio huérfanas. Nada que hacer.' };
+    }
+
+    const previousState: TweakState = {
+      path: 'STARTUP',
+      name: 'StartupApps',
+      type: 'REG_SZ',
+      value: { entries: before } satisfies StartupSnapshot,
+      existed: true,
+    };
+
+    // Backup every entry (not only the removed ones) before touching anything.
+    let backupPath: string | undefined;
+    try {
+      const { getAppDataPath, writeJson } = await import('../utils/files.js');
+      backupPath = getAppDataPath('Backups', 'autostart', 'run-keys.json');
+      await writeJson(backupPath, { entries: before, createdAt: new Date().toISOString() });
+    } catch {
+      // A failed backup must not silently allow a destructive change.
+      return { ok: false, error: 'No se ha podido crear la copia de seguridad de las entradas de inicio. No se ha cambiado nada.' };
+    }
+
+    try {
+      const script = `
+        $paths = @(${RUN_KEY_PATHS.map(p => `'${p}'`).join(',')})
+        foreach ($p in $paths) {
+          if (-not (Test-Path $p)) { continue }
+          $item = Get-ItemProperty -Path $p -ErrorAction SilentlyContinue
+          if (-not $item) { continue }
+          foreach ($prop in @($item.PSObject.Properties)) {
+            if ($prop.Name -like 'PS*') { continue }
+            $cmd = "$($prop.Value)"
+            $exe = $null
+            if ($cmd -match '^\\s*"([^"]+)"') { $exe = $Matches[1] }
+            elseif ($cmd -match '^\\s*([^\\s]+)') { $exe = $Matches[1] }
+            if (-not $exe) { continue }
+            $exe = [Environment]::ExpandEnvironmentVariables($exe)
+            if ($exe -notmatch '\\.(exe|bat|cmd|vbs|com|lnk)$') { continue }
+            if (-not (Test-Path $exe)) {
+              Remove-ItemProperty -Path $p -Name $prop.Name -ErrorAction SilentlyContinue
+            }
+          }
+        }
+      `;
+      await execPowerShell(script);
+
+      const after = await readStartupEntries();
+      const removed = before.length - after.length;
+      if (removed <= 0) {
+        return {
+          ok: false,
+          error: 'No se ha podido retirar ninguna entrada. Ejecuta ZeroTweaks como administrador para modificar las claves HKLM.',
+        };
+      }
+
+      return {
+        ok: true,
+        data: `Se han retirado ${removed} entrada(s) de inicio huérfanas (copia en ${backupPath}).`,
+        previousState,
+        newState: { ...previousState, value: { entries: after } satisfies StartupSnapshot },
+      };
+    } catch (error: any) {
+      return { ok: false, error: error.message };
+    }
   },
   revert: async (originalState: TweakState): Promise<TweakResult> => {
-    return { ok: true, data: 'Re-enable via UI or Task Manager' };
+    const snapshot = originalState?.value as StartupSnapshot | undefined;
+    const dead = (snapshot?.entries ?? []).filter(e => e?.dead);
+    if (dead.length === 0) {
+      return { ok: true, data: 'No hay entradas de inicio huérfanas que restaurar.' };
+    }
+    try {
+      const script = dead
+        .map(e => {
+          const key = e.path.replace(/'/g, "''");
+          const name = e.name.replace(/'/g, "''");
+          const command = e.command.replace(/'/g, "''");
+          return `
+            if (-not (Test-Path '${key}')) { New-Item -Path '${key}' -Force | Out-Null }
+            Set-ItemProperty -Path '${key}' -Name '${name}' -Value '${command}' -Force -ErrorAction SilentlyContinue
+          `;
+        })
+        .join('\n');
+      await execPowerShell(script);
+      return { ok: true, data: `Restauradas ${dead.length} entrada(s) de inicio.` };
+    } catch (error: any) {
+      return { ok: false, error: error.message };
+    }
   },
   verify: async (expectedState: TweakState): Promise<boolean> => {
-    return true;
+    const snapshot = expectedState?.value as StartupSnapshot | undefined;
+    const deadNames = new Set((snapshot?.entries ?? []).filter(e => e?.dead).map(e => `${e.path}::${e.name}`));
+    if (deadNames.size === 0) return true;
+    const current = await readStartupEntries();
+    return !current.some(e => deadNames.has(`${e.path}::${e.name}`));
   },
 };
 
@@ -597,9 +805,12 @@ export const manageStartupApps: Tweak = {
 export const cleanTempFiles: Tweak = {
   id: 'debloat.clean_temp',
   name: 'Clean Temporary Files',
+  nameKey: 'tweaks.debloat.cleanTemp.name',
   category: 'debloat_apps',
   description: 'Cleans %TEMP%, C:\\Windows\\Temp, Windows Update cache, thumbnails, error reports. Preview with size before cleaning.',
+  descriptionKey: 'tweaks.debloat.cleanTemp.description',
   whenHelps: 'Frees disk space. Safe, idempotent. Does NOT clean Prefetch (harms boot).',
+  whenHelpsKey: 'tweaks.debloat.cleanTemp.whenHelps',
   risk: 'safe',
   evidence: 'measured',
   impacto: 'bajo',
@@ -609,9 +820,11 @@ export const cleanTempFiles: Tweak = {
     formFactors: ['desktop', 'laptop'],
   },
   detect: async (): Promise<TweakState> => {
-    // Calculate size of cleanable items
+    // Sizes only the folders that apply() actually cleans. Prefetch used to be
+    // counted here but is never deleted (clearing it hurts boot time), which
+    // made the previewed size larger than the space really freed.
     const script = `
-      $paths = @("$env:TEMP", "C:\\Windows\\Temp", "C:\\Windows\\SoftwareDistribution\\Download", "C:\\Windows\\Prefetch")
+      $paths = @("$env:TEMP", "C:\\Windows\\Temp", "C:\\Windows\\SoftwareDistribution\\Download")
       $total = 0
       foreach ($p in $paths) {
         if (Test-Path $p) {
@@ -621,7 +834,7 @@ export const cleanTempFiles: Tweak = {
       }
       [math]::Round($total / 1GB, 2)
     `;
-    const { stdout } = await execAsync(`powershell -NoProfile -Command "${script}"`);
+    const { stdout } = await execPowerShell(script);
     const sizeGB = parseFloat(stdout.trim()) || 0;
     return { path: 'FILESYSTEM', name: 'TempFilesSize', type: 'REG_DWORD', value: sizeGB, existed: true };
   },
@@ -642,7 +855,7 @@ export const cleanTempFiles: Tweak = {
         # Clean thumbnails
         Get-ChildItem "$env:LOCALAPPDATA\\Microsoft\\Windows\\Explorer" -Filter "thumbcache_*.db" -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
       `;
-      await execAsync(`powershell -NoProfile -Command "${script}"`);
+      await execPowerShell(script);
       return { ok: true, previousState: current, newState: { ...current, value: 0 } };
     } catch (error: any) {
       return { ok: false, error: error.message };

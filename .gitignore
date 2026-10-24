@@ -112,3 +112,9 @@ ntuser.ini
 postcss.config.js
 tailwind.config.js
 .gradle/
+# Compiled output belongs in dist/ only. A stray `.js` next to a `.ts` source
+# is silently preferred by Vite/vitest (extension order) and would ship stale
+# code — an old build of src/shared/tweaks/*.js shipped without the i18n keys.
+src/**/*.js
+src/**/*.js.map
+src/**/*.d.ts.map

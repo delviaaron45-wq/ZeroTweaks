@@ -26,6 +26,9 @@ files:
   - dist/preload/**/*
   - dist/renderer/**/*
   - dist/shared/**/*
+  # Window icon referenced as join(__dirname, "../../../resources/icons/icon.png")
+  # from dist/main/windows — without it the app falls back to the Electron icon.
+  - resources/icons/**/*
   - "!dist/main/**/*.map"
   - "!dist/preload/**/*.map"
   - "!dist/shared/**/*.map"

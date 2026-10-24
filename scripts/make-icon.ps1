@@ -63,3 +63,12 @@ foreach ($e in $entries) {
 foreach ($e in $entries) { $bw.Write($e[1]) }
 $bw.Close(); $fs.Close()
 Write-Output ("ICON_OK " + (Get-Item $out).Length)
+
+# Also export a 256px PNG. Chromium's nativeImage (the BrowserWindow `icon`
+# option) reads PNG/JPEG only — it cannot decode an .ico — so the in-app window
+# icon comes from this file while the installer/exe keeps the .ico.
+$pngPath = Join-Path $dir 'icon.png'
+$tile = New-Tile 256
+$tile.Save($pngPath, [System.Drawing.Imaging.ImageFormat]::Png)
+$tile.Dispose()
+Write-Output ("PNG_OK " + (Get-Item $pngPath).Length)

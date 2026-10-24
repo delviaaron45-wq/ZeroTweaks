@@ -91,18 +91,9 @@ export class BenchmarkManager {
       }
     } catch {}
 
-    // PowerShell fallback
-    const samples: number[] = [];
-    for (let i = 0; i < 100; i++) {
-      const { stdout } = await execPowerShell(`
-        $timer = Get-CimInstance Win32_PerfFormattedData_PerfOS_Processor | Where-Object {$_.Name -eq '_Total'}
-        $timer.PercentProcessorTime
-      `);
-      samples.push(parseFloat(stdout.trim()) || 0);
-      await new Promise(r => setTimeout(r, 10));
-    }
-
-    // Estimate from system timer
+    // PowerShell fallback: ask ntdll for the real timer resolution. The old
+    // implementation sampled CPU load in a loop, which has nothing to do with
+    // the timer and produced a meaningless "jitter" after ~100 slow calls.
     const { stdout } = await execPowerShell(`
       $code = @'
       using System;
@@ -124,8 +115,8 @@ export class BenchmarkManager {
       min: min || 156250,
       max: max || 5000,
       current: current || 156250,
-      jitter: Math.max(...samples) - Math.min(...samples),
-      samples,
+      jitter: 0,
+      samples: [],
     };
   }
 
@@ -207,15 +198,16 @@ export class BenchmarkManager {
     return parseInt(stdout.trim()) || 0;
   }
 
-  private async measureFrameTimes(): Promise<FrameTimeMetrics> {
-    // Would use PresentMon in production
-    // For now, return mock data
-    return {
-      avg: 16.67,
-      p1Low: 14.5,
-      p01Low: 12.0,
-      fps: 60,
-    };
+  /**
+   * Frame times / FPS need an in-game capture (PresentMon or the ETW present
+   * events). Windows exposes nothing usable from a plain CLI call, so instead
+   * of returning invented numbers we report "not measured" (null). The in-game
+   * capture already lives in the diagnosis module, which only runs while a game
+   * is present.
+   */
+  private async measureFrameTimes(): Promise<FrameTimeMetrics | null> {
+    logger.info('Frame times: no in-game capture running, metric not measured');
+    return null;
   }
 
   private getDefaultMetric(name: string): any {
@@ -226,9 +218,9 @@ export class BenchmarkManager {
       'Boot Time': 0,
       'Idle RAM': 0,
       'Startup Processes': 0,
-      'Frame Times': { avg: 16.67, p1Low: 14.5, p01Low: 12.0, fps: 60 },
+      'Frame Times': null,
     };
-    return defaults[name] || {};
+    return defaults[name] ?? {};
   }
 
   private async getSystemSnapshot(tweakId?: string, profileId?: string): Promise<SystemSnapshot> {
@@ -297,11 +289,17 @@ export class BenchmarkManager {
     else if (pingDiff > 5) regressions.push('Network ping worsened');
     else unchanged.push('Network ping unchanged');
 
-    // Compare frame times
-    const fpsDiff = after.metrics.frameTimes.fps - before.metrics.frameTimes.fps;
-    if (fpsDiff > 2) improvements.push('FPS improved');
-    else if (fpsDiff < -2) regressions.push('FPS decreased');
-    else unchanged.push('FPS unchanged');
+    // Compare frame times - only available from an in-game capture.
+    const beforeFps = before.metrics.frameTimes?.fps ?? null;
+    const afterFps = after.metrics.frameTimes?.fps ?? null;
+    if (beforeFps === null || afterFps === null) {
+      unchanged.push('FPS sin medir (requiere una captura dentro del juego)');
+    } else {
+      const fpsDiff = afterFps - beforeFps;
+      if (fpsDiff > 2) improvements.push('FPS improved');
+      else if (fpsDiff < -2) regressions.push('FPS decreased');
+      else unchanged.push('FPS unchanged');
+    }
 
     return { improvements, regressions, unchanged };
   }

@@ -192,7 +192,7 @@ export function BenchmarkPage() {
         <MetricExplanation icon={<Wifi />} title="Network" desc="Ping, jitter, packet loss" color="blue" />
         <MetricExplanation icon={<Database />} title="Memory" desc="Idle RAM, startup processes" color="purple" />
         <MetricExplanation icon={<Cpu />} title="Boot Time" desc="Time to desktop ready" color="green" />
-        <MetricExplanation icon={<Monitor />} title="Frame Times" desc="PresentMon 1% lows, FPS" color="pink" />
+        <MetricExplanation icon={<Monitor />} title="Frame Times" desc="Solo con captura dentro del juego" color="pink" />
       </BentoGrid>
 
       {/* Stutter + driver latency capture (high impact insights) */}
@@ -252,7 +252,7 @@ export function BenchmarkPage() {
                     />
                     <MetricValue 
                       label="FPS" 
-                      value={`${result.metrics.frameTimes?.fps || 0}`} 
+                      value={result.metrics.frameTimes ? `${result.metrics.frameTimes.fps}` : '—'} 
                       icon={<Monitor className="w-4 h-4" />}
                     />
                   </div>

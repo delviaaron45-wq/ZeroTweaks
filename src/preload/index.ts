@@ -57,7 +57,6 @@ const ipcChannels = {
   'dialog:openExternal': (url: string) => ipcRenderer.invoke('dialog:openExternal', { url }),
   'dialog:showMessageBox': (options: any) => ipcRenderer.invoke('dialog:showMessageBox', options),
   'stats:get': () => ipcRenderer.invoke('stats:get'),
-  'tweaks:filterByHardware': (hardware: HardwareProfile) => ipcRenderer.invoke('tweaks:filterByHardware', { hardware }),
   'recovery:generateScript': () => ipcRenderer.invoke('recovery:generateScript'),
 
   // Diagnosis

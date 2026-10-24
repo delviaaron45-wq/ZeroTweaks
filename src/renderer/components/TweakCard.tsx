@@ -15,8 +15,9 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { cn } from '../utils/cn';
-import { useTweaksStore } from '../stores/tweaksStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import { useRipple } from './Effects';
+import { useTranslation } from 'react-i18next';
 import type { Tweak, TweakState, TweakResult } from '../../shared/types/all';
 
 interface TweakCardProps {
@@ -31,6 +32,16 @@ interface TweakCardProps {
   isSelected?: boolean;
   onToggleSelect?: () => void;
   compact?: boolean;
+}
+
+// Helper to get translated text with fallback to original
+function getTranslated(t: (key: string) => string, key: string | undefined, fallback: string): string {
+  if (!key) return fallback;
+  try {
+    return t(key);
+  } catch {
+    return fallback;
+  }
 }
 
 // Complete class strings on purpose: Tailwind only emits the classes it can
@@ -76,6 +87,11 @@ const impactTags: Record<string, { label: string; className: string }> = {
 
 const appliedTag = { label: 'Aplicado', className: 'text-emerald-400 border-emerald-400/30 bg-emerald-400/10' };
 
+// Shown when the tweak cannot be applied in this build (missing vendor API,
+// external tool...). Takes priority over the impact/apply label so the user is
+// never offered an action that would only fail.
+const unavailableTag = { label: 'No disponible', className: 'text-amber-400 border-amber-400/30 bg-amber-400/10' };
+
 export function TweakCard({
   tweak,
   state,
@@ -88,12 +104,18 @@ export function TweakCard({
   onToggleSelect,
   compact = false,
 }: TweakCardProps) {
-  const { dryRun } = useTweaksStore();
+  const { dryRunDefault: dryRun } = useSettingsStore();
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const { containerRef, ripplesLayer } = useRipple<HTMLDivElement>();
+
+  // Translated strings with fallback to original
+  const displayName = getTranslated(t, tweak.nameKey, tweak.name);
+  const displayDescription = getTranslated(t, tweak.descriptionKey, tweak.description);
+  const displayWhenHelps = getTranslated(t, tweak.whenHelpsKey, tweak.whenHelps);
 
   const applied = state?.existed ?
     (state.value !== undefined && state.value !== null) : false;
@@ -102,7 +124,7 @@ export function TweakCard({
   const RiskIcon = risk.icon;
   const EvidenceIcon = evidenceIcons[tweak.evidence]?.icon ?? Info;
   const impact = impactTags[tweak.impacto] ?? impactTags.medio;
-  const status = applied ? appliedTag : impact;
+  const status = tweak.unavailableReason ? unavailableTag : applied ? appliedTag : impact;
 
   // Spotlight: the glow follows the pointer across the card.
   const handleMouseMove = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
@@ -163,8 +185,8 @@ export function TweakCard({
           />
         )}
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm text-foreground">{tweak.name}</p>
-          <p className="text-xs text-muted-foreground truncate" title={tweak.description}>{tweak.description}</p>
+          <p className="font-medium text-sm text-foreground">{displayName}</p>
+          <p className="text-xs text-muted-foreground truncate" title={displayDescription}>{displayDescription}</p>
         </div>
         <div className="flex items-center gap-2">
           <RiskIcon className={cn('w-4 h-4', risk.color)} />
@@ -223,7 +245,7 @@ export function TweakCard({
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-space font-semibold text-foreground">{tweak.name}</h3>
+              <h3 className="font-space font-semibold text-foreground">{displayName}</h3>
               {tweak.requiresReboot && (
                 <span className="text-xs px-2 py-0.5 bg-amber-400/15 text-amber-300 rounded-full flex items-center gap-1 shrink-0">
                   <RotateCcw className="w-3 h-3" /> Reboot
@@ -247,8 +269,8 @@ export function TweakCard({
 
         {/* Description: full text, never clipped mid-word. */}
         <div className="text-sm text-muted-foreground mb-4">
-          <p><strong>What it does:</strong> {tweak.description}</p>
-          <p className="mt-1"><strong>When it helps:</strong> {tweak.whenHelps}</p>
+          <p><strong>What it does:</strong> {displayDescription}</p>
+          <p className="mt-1"><strong>When it helps:</strong> {displayWhenHelps}</p>
         </div>
 
         {/* Expandable details */}
@@ -264,7 +286,7 @@ export function TweakCard({
         {isExpanded && (
           <div className="space-y-3 mb-4 p-3 rounded-xl border border-white/10 bg-white/[0.03]">
             <div className="text-xs text-muted-foreground space-y-1">
-              <p><strong>When it helps:</strong> {tweak.whenHelps}</p>
+              <p><strong>When it helps:</strong> {displayWhenHelps}</p>
               <p><strong>Risk level:</strong> {tweak.risk}</p>
               <p><strong>Evidence:</strong> {tweak.evidence}</p>
               <p><strong>Requires reboot:</strong> {tweak.requiresReboot ? 'Yes' : 'No'}</p>
@@ -298,7 +320,12 @@ export function TweakCard({
 
         {/* Actions: crimson for the main action, cyan for the secondary one */}
         <div className="flex flex-wrap gap-2">
-          {!applied ? (
+          {tweak.unavailableReason ? (
+            <div className="flex items-start gap-2 text-xs text-amber-300/90 bg-amber-400/10 border border-amber-400/20 rounded-xl p-3 w-full">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{tweak.unavailableReason}</span>
+            </div>
+          ) : !applied ? (
             <button
               onClick={handleApply}
               disabled={isApplying || isTesting}

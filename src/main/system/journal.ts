@@ -26,7 +26,7 @@ export class JournalManager {
     }
   }
 
-  async logEntry(entry: Omit<JournalEntry, 'id' | 'timestamp'>): Promise<void> {
+  async logEntry(entry: Omit<JournalEntry, 'id' | 'timestamp'>): Promise<JournalEntry> {
     const fullEntry: JournalEntry = {
       ...entry,
       id: `entry_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -43,6 +43,8 @@ export class JournalManager {
       const manifestDir = getAppDataPath('Backups', this.currentManifest.id);
       await writeJson(join(manifestDir, 'manifest.json'), this.currentManifest);
     }
+
+    return fullEntry;
   }
 
   async flush(): Promise<void> {
@@ -54,11 +56,12 @@ export class JournalManager {
     return this.currentJournal.filter(e => !e.success);
   }
 
-  async markEntryComplete(entryId: string, success: boolean, error?: string): Promise<void> {
+  async markEntryComplete(entryId: string, success: boolean, error?: string, newState?: TweakState): Promise<void> {
     const entry = this.currentJournal.find(e => e.id === entryId);
     if (entry) {
       entry.success = success;
       if (error) entry.error = error;
+      if (newState) entry.newState = newState;
       await this.flush();
     }
   }

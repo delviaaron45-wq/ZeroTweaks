@@ -16,7 +16,8 @@ export interface BenchmarkMetrics {
   bootTime: number;
   idleRam: number;
   startupProcesses: number;
-  frameTimes: FrameTimeMetrics;
+  /** Null when no in-game capture was running (FPS cannot be measured otherwise). */
+  frameTimes: FrameTimeMetrics | null;
 }
 
 export interface TimerMetrics {

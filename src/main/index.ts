@@ -75,7 +75,6 @@ if (!gotTheLock) {
     const preflight = await PreflightChecks.run();
     if (!preflight.ok) {
       logger.error('Preflight checks failed:', preflight.errors);
-      // Show error dialog but don't quit - let user see the issues
     }
 
     // Initialize managers
@@ -104,12 +103,24 @@ if (!gotTheLock) {
       proManager,
     });
 
-    // Background version check: it never blocks the start-up and a failure
-    // leaves the app exactly as it was.
+    // Background version check
     void checkForUpdatesInBackground();
 
-    // Create main window
-    const mainWindow = await createMainWindow();
+    // Create main window. A failure here must never kill the process without
+    // telling the user why, otherwise the app just "does not open".
+    let mainWindow: BrowserWindow;
+    try {
+      mainWindow = await createMainWindow();
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      logger.error('Could not create the main window:', reason);
+      dialog.showErrorBox(
+        'ZeroTweaks',
+        `No se ha podido abrir la ventana principal.\n\n${reason}\n\nRevisa el registro en %APPDATA%\\ZeroTweaks\\logs`
+      );
+      app.quit();
+      return;
+    }
 
     // Headless verification hook (ZT_SMOKE=1): renders the UI, runs the diagnostic
     // and prints a summary so the module can be verified without a display.
@@ -123,8 +134,10 @@ if (!gotTheLock) {
           /* ignore */
         }
       };
+
       setTimeout(async () => {
         try {
+          smokeLog(`[ZT_SMOKE] DEBUG: Smoke test started, ZT_SMOKE_APPLY=${process.env.ZT_SMOKE_APPLY}, ZT_SMOKE_ROUTES=${process.env.ZT_SMOKE_ROUTES}`);
           const wc = mainWindow.webContents;
           const report = await wc.executeJavaScript(
             `window.zerotweaks.diagnosis.run().then(r => JSON.stringify({ score: r.score, summary: r.summary, bottleneck: r.bottleneck.limiter, fineTune: r.fineTune.length, games: r.games.map(g => g.gameId), problems: r.problems.map(p => p.checkId + ':' + p.impact + (p.fixable ? ':fixable' : '')) })).catch(e => 'ERROR: ' + e.message)`
@@ -517,6 +530,46 @@ if (!gotTheLock) {
             smokeLog(`[ZT_SMOKE] update phases -> ${phases.join(' > ')}`);
           }
 
+          if (process.env.ZT_SMOKE_APPLY) {
+            // Test actual Apply/Revert via IPC directly (no UI click needed)
+            const applyTweaks = [
+              'debloat.remove_apps',
+              'privacy.telemetry_minimum',
+              'privacy.advertising_id',
+              'debloat.startup_apps',
+            ];
+            
+            smokeLog(`[ZT_SMOKE_APPLY] DEBUG: env var set, starting tests...`);
+            smokeLog(`[ZT_SMOKE_APPLY] Starting apply tests for ${applyTweaks.length} tweaks...`);
+            
+            for (const tweakId of applyTweaks) {
+              try {
+                smokeLog(`[ZT_SMOKE_APPLY] Testing ${tweakId}...`);
+                
+                // Test detect first
+                const detectResult = await wc.executeJavaScript(
+                  `window.zerotweaks.tweaks['tweak:detect']('${tweakId}').then(r => JSON.stringify({ ok: true, value: r })).catch(e => JSON.stringify({ ok: false, error: e.message }))`
+                );
+                smokeLog(`[ZT_SMOKE_APPLY] ${tweakId} detect -> ${detectResult}`);
+                
+                // Test apply (dryRun)
+                const applyResult = await wc.executeJavaScript(
+                  `window.zerotweaks.tweaks['tweak:apply']('${tweakId}', { dryRun: true }).then(r => JSON.stringify({ ok: true, data: r })).catch(e => JSON.stringify({ ok: false, error: e.message }))`
+                );
+                smokeLog(`[ZT_SMOKE_APPLY] ${tweakId} apply dryRun -> ${applyResult}`);
+                
+                // Test verify
+                const verifyResult = await wc.executeJavaScript(
+                  `window.zerotweaks.tweaks['tweak:verify']('${tweakId}', ${detectResult}).then(r => JSON.stringify({ ok: true, verified: r })).catch(e => JSON.stringify({ ok: false, error: e.message }))`
+                );
+                smokeLog(`[ZT_SMOKE_APPLY] ${tweakId} verify -> ${verifyResult}`);
+                
+              } catch (e: any) {
+                smokeLog(`[ZT_SMOKE_APPLY] ${tweakId} FAILED: ${e.message}`);
+              }
+            }
+          }
+          
           if (process.env.ZT_SMOKE_ROUTES) {
             // Walk every route to prove each lazy chunk loads over file:// and
             // nothing throws while rendering. A collector is injected once and

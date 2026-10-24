@@ -44,8 +44,8 @@ const MODULE_CARDS = [
 export function Dashboard() {
   const { t } = useTranslation();
   const { hardware, isLoading: hwLoading, fetchHardware } = useHardwareStore();
-  const { filteredTweaks, fetchTweaks, filterTweaks, detectTweak, applyTweak, revertTweak, dryRun, setDryRun, selectedTweakIds } = useTweaksStore();
-  const { theme } = useSettingsStore();
+  const { filteredTweaks, fetchTweaks, filterTweaks, detectTweak, applyTweak, revertTweak, selectedTweakIds } = useTweaksStore();
+  const { theme, dryRunDefault: dryRun, setDryRunDefault: setDryRun } = useSettingsStore();
   const { success, error, warning, info } = useToastActions();
 
   const [systemScore, setSystemScore] = useState(0);
@@ -83,7 +83,7 @@ export function Dashboard() {
 
   const handleOptimize = async () => {
     setIsOptimizing(true);
-    const safeTweaks = filteredTweaks.filter(t => t.risk === 'safe' && !t.requiresReboot);
+    const safeTweaks = filteredTweaks.filter(t => t.risk === 'safe' && !t.requiresReboot && !t.unavailableReason);
     
     for (const tweak of safeTweaks) {
       try {

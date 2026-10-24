@@ -12,9 +12,9 @@ function buildCsp(): string {
   const directives: Record<string, string[]> = {
     'default-src': ["'self'"],
     'script-src': ["'self'", ...(isDev ? ["'unsafe-inline'", "'unsafe-eval'"] : [])],
-    'style-src': ["'self'", "'unsafe-inline'"],
+    'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
     'img-src': ["'self'", 'data:', 'blob:'],
-    'font-src': ["'self'", 'data:'],
+    'font-src': ["'self'", 'data:', 'https://fonts.gstatic.com'],
     'connect-src': ["'self'", ...(isDev ? ['ws://localhost:5173', 'http://localhost:5173'] : [])],
     'media-src': ["'self'", 'data:'],
     'object-src': ["'none'"],
@@ -91,15 +91,10 @@ export async function createMainWindow(): Promise<BrowserWindow> {
   nativeTheme.on('updated', updateTheme);
   updateTheme();
 
-  // Load URL
-  if (isDev) {
-    await window.loadURL('http://localhost:5173');
-    window.webContents.openDevTools({ mode: 'detach' });
-  } else {
-    await window.loadFile(join(__dirname, '../../renderer/index.html'));
-  }
-
-  // Surface renderer errors/warnings in the main log.
+  // Handlers MUST be attached before the first load: `ready-to-show` is
+  // emitted on the first paint, which can happen while `loadFile` is still
+  // pending. Subscribing after the load races with that event and, when it is
+  // missed, the window stays invisible forever while the app keeps running.
   window.webContents.on('console-message', (_event, level, message, line, sourceId) => {
     if (level >= 2) {
       logger.warn(`[renderer] ${message} (${sourceId}:${line})`);
@@ -108,15 +103,43 @@ export async function createMainWindow(): Promise<BrowserWindow> {
     }
   });
 
-  window.webContents.on('render-process-gone', (_event, details) => {
-    logger.error(`Renderer process gone: ${details.reason}`);
+  window.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+    // Sub-frame failures are noise; only the main document matters here.
+    if (isMainFrame && errorCode !== -3) {
+      logger.error(`Renderer failed to load: ${errorCode} - ${errorDescription} (${validatedURL})`);
+    }
   });
 
-  // Show when ready
+  window.webContents.on('render-process-gone', (_event, details) => {
+    logger.error(`Renderer process gone: ${details.reason}`, details);
+  });
+
   window.once('ready-to-show', () => {
     window.show();
     logger.info('Main window shown');
   });
+
+  // Load URL
+  if (isDev) {
+    try {
+      await window.loadURL('http://localhost:5173');
+      window.webContents.openDevTools({ mode: 'detach' });
+    } catch (err) {
+      // No dev server running: fall back to the last build instead of dying.
+      logger.warn('Vite dev server not reachable, loading the built renderer', err);
+      await window.loadFile(join(__dirname, '../../renderer/index.html'));
+    }
+  } else {
+    await window.loadFile(join(__dirname, '../../renderer/index.html'));
+  }
+
+  // Safety net: if the first paint already happened before the listener was
+  // attached (fast asar loads), show the window anyway. `backgroundColor` is
+  // set above, so this never flashes white.
+  if (!window.isVisible()) {
+    window.show();
+    logger.info('Main window shown (after load fallback)');
+  }
 
   // Handle window events
   window.on('closed', () => {

@@ -43,6 +43,12 @@ declare const ipcChannels: {
     readonly 'dialog:showMessageBox': (options: any) => Promise<any>;
     readonly 'stats:get': () => Promise<any>;
     readonly 'tweaks:filterByHardware': (hardware: HardwareProfile) => Promise<any>;
+  readonly 'tweak:detect': (tweakId: string) => Promise<any>;
+  readonly 'tweak:apply': (tweakId: string, options?: { dryRun?: boolean }) => Promise<any>;
+  readonly 'tweak:revert': (tweakId: string, originalState: any) => Promise<any>;
+  readonly 'tweak:verify': (tweakId: string, expectedState: any) => Promise<any>;
+  readonly 'tweak:list': () => Promise<any>;
+  readonly 'tweak:get': (tweakId: string) => Promise<any>;
     readonly 'recovery:generateScript': () => Promise<any>;
     readonly 'diagnosis:run': () => Promise<any>;
     readonly 'diagnosis:getReport': () => Promise<any>;

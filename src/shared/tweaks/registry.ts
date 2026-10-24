@@ -1,18 +1,43 @@
-// Registry helper with proper error handling
+// Registry helper with proper error handling.
+//
+// winreg is CommonJS and does `module.exports = Registry`, so it must be
+// imported as a default: a named import yields `undefined` and every registry
+// tweak dies at call time with "Registry is not a constructor".
 // The ambient `declare module 'winreg'` lives in ./winreg.d.ts, which the
-// tsconfig already picks up via the `src/shared/**/*` include, so no triple
-// slash reference is needed here.
-import { Registry } from 'winreg';
+// tsconfig already picks up via the `src/shared/**/*` include.
+import Registry from 'winreg';
 import { promisify } from 'util';
+
+/**
+ * `reg.exe` exits with code 1 when the key/value does not exist, and winreg
+ * rethrows that as `ProcessUncleanExitError` with a *localized* message. The
+ * old check only looked for the English "not found", so on a Spanish Windows a
+ * missing value made `detect()` throw instead of reporting "not applied".
+ *
+ * Misuse errors (bad hive/key syntax) also exit with 1 but must stay visible:
+ * they are bugs, not a "value is absent" answer.
+ */
+function isRegistryMiss(error: unknown): boolean {
+  const err = error as { code?: string | number; message?: string } | null | undefined;
+  if (!err) return false;
+  const message = String(err.message ?? '');
+  if (/invalid key name|incorrect syntax|nombre de clave no v|sintaxis incorrecta/i.test(message)) {
+    return false;
+  }
+  if (err.code === 'ENOENT') return true;
+  return err.code === 1 || /not found|cannot find|no ha podido encontrar/i.test(message);
+}
 
 // Registry helper with proper error handling
 export class RegistryManager {
+  // winreg spawns `reg.exe`, which only understands the plain hive names:
+  // the extended-length `\\?\HKLM` form is rejected with "invalid key name".
   private static hives = {
-    HKLM: '\\\\?\\HKLM',
-    HKCU: '\\\\?\\HKCU',
-    HKCR: '\\\\?\\HKCR',
-    HKU: '\\\\?\\HKU',
-    HKCC: '\\\\?\\HKCC',
+    HKLM: Registry.HKLM,
+    HKCU: Registry.HKCU,
+    HKCR: Registry.HKCR,
+    HKU: Registry.HKU,
+    HKCC: Registry.HKCC,
   } as const;
 
   static getKey(hive: keyof typeof RegistryManager.hives, path: string): Registry {
@@ -29,8 +54,8 @@ export class RegistryManager {
     try {
       const result = await getValue(name);
       return { value: result.value, type: result.type, existed: true };
-    } catch (error: any) {
-      if (error.code === 'ENOENT' || error.message?.includes('not found')) {
+    } catch (error) {
+      if (isRegistryMiss(error)) {
         return { value: null, type: 'REG_DWORD', existed: false };
       }
       throw error;
@@ -52,7 +77,13 @@ export class RegistryManager {
   static async deleteValue(hive: keyof typeof RegistryManager.hives, path: string, name: string): Promise<void> {
     const key = RegistryManager.getKey(hive, path);
     const remove = promisify(key.remove.bind(key)) as (name: string) => Promise<void>;
-    await remove(name);
+    try {
+      await remove(name);
+    } catch (error) {
+      // Removing a value that is already absent is a no-op, not a failure.
+      if (isRegistryMiss(error)) return;
+      throw error;
+    }
   }
 
   static async keyExists(hive: keyof typeof RegistryManager.hives, path: string): Promise<boolean> {

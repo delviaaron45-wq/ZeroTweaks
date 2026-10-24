@@ -11,7 +11,7 @@ const defaultSettings: Settings = {
   minimizeToTray: true,
   checkUpdates: true,
   telemetryOptIn: false,
-  dryRunDefault: true,
+  dryRunDefault: false,
   batterySaverMode: false,
   gameModeAuto: true,
   overlay: {

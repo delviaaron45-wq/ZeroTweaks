@@ -511,7 +511,438 @@ export const en = {
     restorePointCreated: 'System restore point created',
     benchmarkComplete: 'Benchmark completed. Check results for details.',
   },
-} as const;
+  tweaks: {
+    debloat: {
+      removeApps: {
+        name: 'Remove Pre-installed Bloatware Apps',
+        description: 'Removes selected pre-installed Appx packages (Candy Crush, News, Weather, etc.) via Remove-AppxPackage and Remove-AppxProvisionedPackage. Protected list excluded.',
+        whenHelps: 'Frees disk space, reduces background processes, cleans Start menu. Only removes user-selected apps.',
+      },
+      oneDriveAutostart: {
+        name: 'Disable OneDrive Auto-start',
+        description: 'Removes OneDrive from Run key and disables autostart in OneDrive settings. Does not uninstall.',
+        whenHelps: 'Prevents OneDrive from running at login if not used. Saves RAM/CPU.',
+      },
+      startupApps: {
+        name: 'Manage Startup Applications',
+        description: 'Lists and allows disabling startup entries from Run keys, Task Scheduler, and Services. Shows estimated impact.',
+        whenHelps: 'Reduces boot time, frees RAM. Interactive selection in UI.',
+      },
+      cleanTemp: {
+        name: 'Clean Temporary Files',
+        description: 'Cleans %TEMP%, C:\\Windows\\Temp, Windows Update cache, thumbnails, error reports. Preview with size before cleaning.',
+        whenHelps: 'Frees disk space. Safe, idempotent. Does NOT clean Prefetch (harms boot).',
+      },
+    },
+    privacy: {
+      telemetry: {
+        name: 'Set Telemetry to Minimum (Required)',
+        description: 'Sets AllowTelemetry=1 in HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection. Minimum allowed on Home/Pro. Does not disable DiagTrack service.',
+        whenHelps: 'Reduces data sent to Microsoft. Required level on Home/Pro. Enterprise/Education can set 0.',
+      },
+      diagTrack: {
+        name: 'Disable DiagTrack Service (Connected User Experiences)',
+        description: 'Sets DiagTrack service startup to Disabled. Backs up original state. Reduces telemetry collection.',
+        whenHelps: 'Stops Connected User Experiences and Telemetry service. May affect Feedback Hub, some diagnostics.',
+      },
+      dmwappush: {
+        name: 'Disable dmwappushservice (WAP Push Message Routing)',
+        description: 'Sets dmwappushservice startup to Disabled. Used for enterprise push notifications.',
+        whenHelps: 'Reduces background network activity. Not needed on consumer devices.',
+      },
+      advertisingId: {
+        name: 'Disable Advertising ID',
+        description: 'Sets EnableAdvertisingId=0 in HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo. Resets per user.',
+        whenHelps: 'Prevents apps from using advertising ID for personalized ads.',
+      },
+      tailoredExperiences: {
+        name: 'Disable Tailored Experiences',
+        description: 'Sets SubscribedContent-310093Enabled=0 and SubscribedContent-338387Enabled=0 in HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager.',
+        whenHelps: 'Stops suggested apps, tips, and tailored content in Start/Shell.',
+      },
+      locationTracking: {
+        name: 'Disable Location Tracking',
+        description: 'Sets Location=0 in HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors. Disables location for all users.',
+        whenHelps: 'Prevents Windows and apps from accessing location. May affect Maps, Weather, Find My Device.',
+      },
+      cortanaWeb: {
+        name: 'Disable Cortana Web Search / Search Box Web Results',
+        description: 'Sets AllowSearchToUseLocation=0, DisableWebSearch=1, ConnectedSearchUseForm=0 in HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer.',
+        whenHelps: 'Keeps search local. Prevents Bing web results in Start/Search. Cortana deprecated in Win11.',
+      },
+      activityHistory: {
+        name: 'Disable Activity History (Timeline)',
+        description: 'Sets PublishUserActivities=0, UploadUserActivities=0 in HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\System.',
+        whenHelps: 'Disables Timeline/Task View cross-device history. Reduces cloud sync.',
+      },
+    },
+    gpu: {
+      hags: {
+        name: 'Hardware Accelerated GPU Scheduling (HAGS)',
+        description: 'Sets HwSchMode=2 in HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers. Requires a supported driver (WDDM 2.7+) and GPU.',
+        whenHelps: 'Reduces latency by letting the GPU manage its own memory. Requires a compatible driver (NVIDIA 451.48+, AMD 20.5.1+, Intel 27.20.100.8476+).',
+      },
+      preferenceHighPerf: {
+        name: 'Set GPU Preference to High Performance for Apps',
+        description: 'Configures HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences per executable to use the high-performance GPU.',
+        whenHelps: 'Forces specific games and apps to use the discrete GPU on hybrid laptops. Per-app override.',
+      },
+      disableFullscreenOpt: {
+        name: 'Disable Fullscreen Optimizations',
+        description: 'Sets HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers for game executables to disable fullscreen optimizations.',
+        whenHelps: 'Can fix stuttering, alt-tab issues and input lag in some games. Per-game setting.',
+      },
+      disableMpo: {
+        name: 'Disable Multi-Plane Overlay (MPO)',
+        description: 'Sets OverlayTestMode=5 in HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm. Disables MPO, which can cause flickering or tearing with some drivers.',
+        whenHelps: 'Fixes screen flickering, tearing or colour issues on some driver and hardware combinations. Evidence: debated.',
+      },
+      vrrWindowed: {
+        name: 'Enable VRR/G-Sync for Windowed Games',
+        description: 'Sets AllowVRR=1 in HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm. Allows Variable Refresh Rate in windowed and borderless modes.',
+        whenHelps: 'Enables G-Sync/FreeSync in borderless windowed mode. Requires a compatible monitor and driver.',
+      },
+      nvidiaLowLatency: {
+        name: 'NVIDIA Low Latency Mode',
+        description: 'Sets Low Latency Mode to Ultra/On via NVAPI/DRS per application, reducing render queue depth.',
+        whenHelps: 'Reduces input lag in GPU-bound scenarios, and Ultra adds frame pacing. Per-game profile.',
+      },
+      nvidiaPowerMgmt: {
+        name: 'NVIDIA Power Limit: Maximum Performance',
+        description: 'Raises the GPU power limit to the highest value the card accepts (nvidia-smi -pl), so the GPU stops throttling below its rating under sustained load. Reversible: revert restores the factory limit. Requires administrator rights.',
+        whenHelps: 'Sustained gaming or rendering on cards that throttle on power. No effect if the card is already at its maximum limit.',
+      },
+      nvidiaPersistence: {
+        name: 'NVIDIA Persistence Mode',
+        description: 'Enables persistence mode (nvidia-smi -pm 1) so the driver keeps the GPU initialised instead of reloading its state on every call. Reversible.',
+        whenHelps: 'Small latency reduction when many programs initialise the GPU. Not supported on every platform.',
+      },
+      nvidiaShaderCache: {
+        name: 'NVIDIA Shader Cache Size',
+        description: 'Sets Shader Cache Size via NVAPI/DRS. A larger cache reduces stutter caused by shader compilation.',
+        whenHelps: 'Reduces first-run stutter in games at the cost of more disk space. Per-game or global.',
+      },
+      amdAntiLag: {
+        name: 'AMD Anti-Lag',
+        description: 'Enables AMD Anti-Lag via ADLX/registry. Controls frame pacing to reduce input lag.',
+        whenHelps: 'Reduces input latency in GPU-bound games. Works on the RX 5000 series and newer.',
+      },
+      amdChill: {
+        name: 'AMD Radeon Chill',
+        description: 'Configures Radeon Chill min/max FPS via ADLX, dynamically regulating frame rate to save power.',
+        whenHelps: 'Reduces GPU temperature and power in less demanding scenes. Can add latency if misconfigured.',
+      },
+      intelPower: {
+        name: 'Intel GPU Maximum Performance',
+        description: 'Sets the Intel GPU power plan to Maximum Performance via the Intel Graphics Command Center registry.',
+        whenHelps: 'Prevents iGPU throttling. Useful for Quick Sync and light gaming on the iGPU.',
+      },
+      resizableBar: {
+        name: 'Resizable BAR Status (Detection Only)',
+        description: 'Detects whether Resizable BAR / SAM is enabled in the BIOS and recognised by Windows. No changes are made.',
+        whenHelps: 'Shows the current status. Enable it in the BIOS for potential performance gains (requires CPU, GPU and motherboard support).',
+      },
+    },
+    power: {
+      ultimatePerformance: {
+        name: 'Enable Ultimate Performance Power Plan',
+        description: 'Duplicates and activates the Ultimate Performance scheme (GUID: e9a42b02-d5df-448d-aa00-03f14749eb61). Hidden by default on laptops.',
+        whenHelps: 'Maximum CPU frequency, no core parking and no PCIe link power management. Desktop only; laptops should use High Performance.',
+      },
+      highPerformance: {
+        name: 'Enable High Performance Power Plan',
+        description: 'Activates the High Performance scheme (GUID: 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c). Available on all form factors.',
+        whenHelps: 'Prevents CPU throttling and keeps cores unparked. Fallback for laptops without Ultimate Performance.',
+      },
+      disableCoreParking: {
+        name: 'Disable CPU Core Parking',
+        description: 'Sets Processor Performance Core Parking Min Cores to 100% via powercfg, keeping all cores active.',
+        whenHelps: 'Reduces latency from core wake-up and increases idle power draw. Recommended on desktops.',
+      },
+      boostMode: {
+        name: 'Aggressive CPU Boost Mode',
+        description: 'Sets Processor Performance Boost Mode to Aggressive (1) via powercfg, allowing higher turbo frequencies for longer.',
+        whenHelps: 'Better sustained clocks in games, at the cost of more heat and power. Recommended on desktops.',
+      },
+      pcieLinkOff: {
+        name: 'Disable PCIe Link State Power Management',
+        description: 'Sets PCI Express Link State Power Management to Off, preventing GPU/SSD link downstates.',
+        whenHelps: 'Reduces latency spikes from link training and increases idle power. Desktop only.',
+      },
+      usbSelectiveSuspend: {
+        name: 'Disable USB Selective Suspend',
+        description: 'Sets USB Selective Suspend Setting to Disabled, preventing USB devices from being powered down.',
+        whenHelps: 'Fixes mouse/keyboard wake latency and audio interface dropouts. Slightly increases laptop battery drain.',
+      },
+      hibernateOff: {
+        name: 'Disable Hibernation (Delete hiberfil.sys)',
+        description: 'Runs powercfg /hibernate off, deleting hiberfil.sys and freeing RAM-sized space on disk. Disables Fast Startup.',
+        whenHelps: 'Frees disk space (8-64 GB), required by some disk imaging tools. Disables Fast Startup.',
+      },
+      fastStartupOff: {
+        name: 'Disable Fast Startup (Hybrid Boot)',
+        description: 'Sets HiberbootEnabled=0 in HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power, performing a full cold boot each time.',
+        whenHelps: 'Fixes dual-boot issues, driver loading problems and BitLocker prompts. Boot is slightly slower.',
+      },
+    },
+    storage: {
+      disableLastAccess: {
+        name: 'Disable Last Access Timestamp Updates',
+        description: 'Runs fsutil behavior set disablelastaccess 1, stopping NTFS from updating the last access time on file reads.',
+        whenHelps: 'Reduces metadata writes on reads. Small gain on HDDs, negligible on SSDs.',
+      },
+      trimStatus: {
+        name: 'TRIM Status & Enable',
+        description: 'Queries DisableDeleteNotify (0 = TRIM enabled) and sets it to 0 when disabled. SSDs only.',
+        whenHelps: 'Ensures TRIM is active for SSD performance and longevity. Enabled by default.',
+      },
+      optimizeVolumes: {
+        name: 'Optimize Volumes (Defrag HDD / TRIM SSD)',
+        description: 'Runs Optimize-Volume on all fixed drives, using Defrag for HDDs and TRIM/Retrim for SSDs.',
+        whenHelps: 'Maintains drive performance. Safe and scheduled by default; run manually for an immediate effect.',
+      },
+      smartStatus: {
+        name: 'SMART Health Status Check',
+        description: 'Reads SMART data from all drives: health, temperature and reallocated sectors. Read-only.',
+        whenHelps: 'Early warning of drive failure. No changes are made.',
+      },
+    },
+    ram: {
+      memoryCompression: {
+        name: 'Enable Memory Compression',
+        description: 'Ensures Memory Compression is enabled (on by default), compressing memory pages instead of paging them to disk.',
+        whenHelps: 'Reduces page file usage and improves responsiveness under memory pressure. On by default.',
+      },
+      pagefileSystem: {
+        name: 'Set Page File to System Managed',
+        description: 'Sets the page file to "System managed size" on all drives. Recommended for stability.',
+        whenHelps: 'Prevents out-of-memory crashes. Windows manages the size dynamically; use a custom size only for specific workloads.',
+      },
+      clearStandby: {
+        name: 'Clear Standby List (Empty StandbyList)',
+        description: 'Runs EmptyStandbyList.exe (external tool) to clear modified and standby pages. Advanced, manual only. Evidence: debated.',
+        whenHelps: 'Frees RAM shown as "Cached", but can cause stutter as apps re-read from disk. Use only under memory pressure.',
+      },
+      infoReport: {
+        name: 'RAM Configuration Report',
+        description: 'Reports total RAM, speed, type (DDR4/5), channels and timings. Read-only diagnostic.',
+        whenHelps: 'Verifies the RAM is running at its rated speed (XMP/EXPO) and identifies single-channel configurations.',
+      },
+    },
+    peripherals: {
+      mouseQueue: {
+        name: 'Mouse Data Queue Size (mouclass)',
+        description: 'Sets MouseDataQueueSize in HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters. Default 100 (0x64). Lowering it to 20 is unproven and may drop events on 8 kHz mice. Advanced, disabled by default.',
+        whenHelps: 'Theoretically reduces input latency, with a risk of lost mouse events. Evidence: placebo/debated. An A/B test is recommended.',
+      },
+      keyboardQueue: {
+        name: 'Keyboard Data Queue Size (kbdclass)',
+        description: 'Sets KeyboardDataQueueSize in HKLM\\SYSTEM\\CurrentControlSet\\Services\\kbdclass\\Parameters. Default 100, with the same caveats as the mouse queue.',
+        whenHelps: 'Theoretical latency reduction, with a risk of lost keystrokes. Evidence: placebo.',
+      },
+      msiModeGpu: {
+        name: 'MSI Mode for GPU (Message Signaled Interrupts)',
+        description: 'Enables MSI for the GPU via the registry: HKLM\\SYSTEM\\CurrentControlSet\\Enum\\PCI\\<device>\\<instance>\\Device Parameters\\Interrupt Management\\MessageSignaledInterruptProperties -> MSISupported=1. Requires a compatible device and a reboot. Moderate risk.',
+        whenHelps: 'Reduces interrupt latency for the GPU and can improve frame pacing. The device must support MSI.',
+      },
+      msiModeNetwork: {
+        name: 'MSI Mode for Network Adapter',
+        description: 'Enables MSI for the primary network adapter, similar to GPU MSI, to reduce network interrupt latency.',
+        whenHelps: 'May reduce DPC latency from network interrupts. Requires a compatible NIC.',
+      },
+      interruptAffinity: {
+        name: 'Interrupt Affinity Policy (Device Priority)',
+        description: 'Sets DevicePriority in ...\\Interrupt Management\\Affinity Policy. 1=Low, 2=Normal, 3=High. Assigns interrupts to specific CPU cores. Advanced, per-device.',
+        whenHelps: 'Can isolate interrupts to specific cores. Complex and requires testing; misconfiguration can destabilise the system.',
+      },
+      hpetOff: {
+        name: 'Force HPET Off (Use TSC/Invariant TSC)',
+        description: 'Sets UsePlatformClock=No via bcdedit, forcing Windows to use the TSC instead of the HPET. Can improve timer consistency on modern CPUs.',
+        whenHelps: 'Reduces timer jitter on systems where the HPET is slower than the TSC. Requires an Invariant TSC (most CPUs since ~2010).',
+      },
+      dynamicTickDisable: {
+        name: 'Disable Dynamic Tick (Tickless Kernel)',
+        description: 'Sets disabledynamictick=Yes via bcdedit, forcing a periodic timer tick. Can reduce timer variance for audio and realtime work.',
+        whenHelps: 'May improve DPC latency consistency and increases power consumption. Evidence: debated.',
+      },
+      usbPolling: {
+        name: 'USB Polling Rate Detection',
+        description: 'Detects the current USB polling rate of HID devices. 125 Hz by default, 1000 Hz or more for gaming mice. Read-only.',
+        whenHelps: 'Verifies the mouse and keyboard run at the expected polling rate. Change it via the device software, not Windows.',
+      },
+      mouseAccelOff: {
+        name: 'Disable Mouse Acceleration (Enhance Pointer Precision)',
+        description: 'Sets MouseSpeed=0, MouseThreshold1=0 and MouseThreshold2=0, disabling "Enhance pointer precision".',
+        whenHelps: 'Raw 1:1 mouse movement, essential for competitive FPS. Does not affect sensitivity.',
+      },
+    },
+    services: {
+      sysmainManual: {
+        name: 'SysMain (Superfetch) to Manual',
+        description: 'Sets the SysMain service to Manual startup. It prefetches apps into RAM; disable it on SSDs and keep it Manual on HDDs.',
+        whenHelps: 'Reduces disk usage on SSDs; on HDDs, Manual allows on-demand prefetching. Default: Automatic.',
+      },
+      wsearchManual: {
+        name: 'Windows Search to Manual',
+        description: 'Sets the WSearch service to Manual. It indexes files for fast search; disable it when using Everything or another third-party search tool.',
+        whenHelps: 'Reduces CPU and disk usage from indexing. Search still works but is slower on non-indexed locations.',
+      },
+      spoolerManual: {
+        name: 'Print Spooler to Manual',
+        description: 'Sets the Spooler service to Manual. It is only needed when printing; disable it if no printer is attached.',
+        whenHelps: 'Reduces the attack surface (PrintNightmare) and frees RAM. Enable it manually when you need to print.',
+      },
+      faxDisabled: {
+        name: 'Disable Fax Service',
+        description: 'Sets the Fax service to Disabled. Legacy fax support, not needed on modern systems.',
+        whenHelps: 'Reduces the attack surface and frees a small amount of RAM. No downside if you do not use a fax modem.',
+      },
+      remoteRegistryDisabled: {
+        name: 'Disable Remote Registry',
+        description: 'Sets the RemoteRegistry service to Disabled, blocking remote registry access as a security hardening step.',
+        whenHelps: 'Prevents remote registry manipulation. No downside on single-user systems.',
+      },
+      mapsDisabled: {
+        name: 'Disable Downloaded Maps Manager',
+        description: 'Sets the MapsBroker service to Disabled. It manages offline maps and is not needed if you do not use offline Windows Maps.',
+        whenHelps: 'Frees RAM and CPU. No downside if you do not use offline maps.',
+      },
+      xboxManual: {
+        name: 'Xbox Services to Manual',
+        description: 'Sets XboxLiveAuthManager, XboxLiveGameSave and XboxNetApiSvc to Manual. Only needed for Xbox Game Bar and Game Pass.',
+        whenHelps: 'Reduces background processes when you do not use Xbox features. Game Bar may stop working.',
+      },
+      bluetoothManual: {
+        name: 'Bluetooth Support to Manual',
+        description: 'Sets bthserv to Manual. It is only needed for Bluetooth devices; disable it when there is no Bluetooth hardware.',
+        whenHelps: 'Frees RAM and CPU. No downside without Bluetooth hardware.',
+      },
+      wuManual: {
+        name: 'Windows Update to Manual (NOT Disabled)',
+        description: 'Sets wuauserv to Manual, which still allows manual update checks. Never disable it: it is security critical, and Manual lets you control the timing.',
+        whenHelps: 'Prevents forced restarts during gaming. You decide when to check and install, and security updates remain possible.',
+      },
+      listReport: {
+        name: 'Service Configuration Report',
+        description: 'Lists all services with their startup type, status and description. Read-only diagnostic.',
+        whenHelps: 'Audits the current service state and identifies unnecessary running services.',
+      },
+    },
+    explorer: {
+      showExtensions: {
+        name: 'Show File Extensions',
+        description: 'Sets HideFileExt=0 in HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced, showing extensions for known file types.',
+        whenHelps: 'Security: prevents malware.exe.txt masquerading. Essential for developers.',
+      },
+      showHidden: {
+        name: 'Show Hidden Files & Folders',
+        description: 'Sets Hidden=1 in HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced, showing hidden files but not system-protected ones.',
+        whenHelps: 'Access config files, AppData and similar locations. Does not show protected OS files.',
+      },
+      showProtected: {
+        name: 'Show Protected Operating System Files',
+        description: 'Sets ShowSuperHidden=1 in HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced, showing critical system files. Advanced.',
+        whenHelps: 'For advanced troubleshooting, with a risk of accidental deletion. Use with caution.',
+      },
+      disableThumbnails: {
+        name: 'Disable Thumbnails (Show Icons Only)',
+        description: 'Sets IconsOnly=1 in HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced, disabling thumbnail previews.',
+        whenHelps: 'Faster folder loading on slow drives, less disk I/O and freed thumbnail cache space.',
+      },
+      separateProcess: {
+        name: 'Launch Folder Windows in Separate Process',
+        description: 'Sets SeparateProcess=1 in HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced, so each Explorer window runs in its own process.',
+        whenHelps: 'A crash in one window does not take down all of them: better stability, slightly more RAM.',
+      },
+      disableStartWeb: {
+        name: 'Disable Web Search in Start Menu',
+        description: 'Sets DisableSearchBoxSuggestions=1 in HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer, removing Bing web results from Start.',
+        whenHelps: 'Cleaner Start menu with local search only, and a privacy improvement.',
+      },
+      classicContextMenu: {
+        name: 'Classic Context Menu (Windows 11)',
+        description: 'Empties the default value of HKCU\\Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\\InprocServer32 to restore the full right-click menu without "Show more options".',
+        whenHelps: 'Faster access to every context menu item. Windows 11 only. Requires an Explorer restart.',
+      },
+      disableNotifications: {
+        name: 'Disable Notification Center (Action Center)',
+        description: 'Sets HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer\\DisableNotificationCenter=1, hiding the notification center icon and panel.',
+        whenHelps: 'Removes distractions and gives a cleaner taskbar. Focus Assist remains available.',
+      },
+      taskbarSmall: {
+        name: 'Taskbar Small Icons / Uncombine (Win11)',
+        description: 'Windows 10: TaskbarSmallIcons=1. Windows 11: uses ExplorerPatcher or registry tweaks to uncombine buttons. Requires an Explorer restart.',
+        whenHelps: 'More taskbar space. Windows 11 shows labels and never combines; Windows 10 uses smaller buttons.',
+      },
+      disableTaskbarAnim: {
+        name: 'Disable Taskbar Animations',
+        description: 'Sets TaskbarAnimations=0 in HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced, disabling hover and click animations.',
+        whenHelps: 'A snappier feel with lower visual latency. Accessibility: respects prefers-reduced-motion.',
+      },
+      disableWindowAnim: {
+        name: 'Disable Window Minimize/Maximize Animations',
+        description: 'Sets MinAnimate=0 in HKCU\\Control Panel\\Desktop\\WindowMetrics, disabling window animations.',
+        whenHelps: 'Windows open and close instantly for a snappier UX. Accessibility friendly.',
+      },
+      disableSnap: {
+        name: 'Disable Snap Assist / Snap Layouts',
+        description: 'Sets SnapAssist=0 in HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced, disabling drag-to-snap and Windows 11 snap layouts.',
+        whenHelps: 'Prevents accidental snapping and gives cleaner window management for tiling WM users.',
+      },
+    },
+    system: {
+      win32priorityseparation: {
+        name: 'Foreground Application Boost',
+        description: 'Increases CPU time slices for foreground applications (Win32PrioritySeparation = 0x26). The default is 2 (short quanta); 0x26 = 38 gives longer quanta to foreground apps.',
+        whenHelps: 'Improves the responsiveness of the active window, especially on older CPUs or under heavy background loads.',
+      },
+      systemresponsiveness: {
+        name: 'MMCSS System Responsiveness',
+        description: 'Sets SystemResponsiveness to 10 (default 20) in the Multimedia SystemProfile. Lower values give more CPU to multimedia tasks.',
+        whenHelps: 'Reduces audio and video glitches under load, but may slightly reduce background task throughput.',
+      },
+      mmcssGames: {
+        name: 'MMCSS Games Task Optimization',
+        description: 'Optimises the MMCSS Games task: GPU Priority=8, Priority=6, Scheduling Category=High, SFIO Priority=High.',
+        whenHelps: 'Gives games higher CPU/GPU scheduling priority and better I/O priority.',
+      },
+      networkthrottling: {
+        name: 'Disable Network Throttling for Multimedia',
+        description: 'Sets NetworkThrottlingIndex to 0xFFFFFFFF (disabled), preventing Windows from throttling network traffic during multimedia playback.',
+        whenHelps: 'Reduces packet loss and jitter while gaming or streaming on high-bandwidth connections.',
+      },
+    },
+    network: {
+      disableNagle: {
+        name: 'Disable Nagle Algorithm (TCPNoDelay)',
+        description: 'Sets TcpAckFrequency=1, TCPNoDelay=1 and TcpDelAckTicks=0 on the active network interfaces, forcing immediate ACKs and disabling delayed ACK.',
+        whenHelps: 'May reduce latency in games and SSH, but can increase CPU usage and packet count. Evidence: debated.',
+      },
+      tcpAutotuning: {
+        name: 'TCP Autotuning Level Normal',
+        description: 'Runs netsh int tcp set global autotuninglevel=normal, allowing dynamic receive window scaling.',
+        whenHelps: 'Improves throughput on high-latency, high-bandwidth links. Normal is the default; "disabled" hurts performance.',
+      },
+      ecn: {
+        name: 'Disable ECN (Explicit Congestion Notification)',
+        description: 'Runs netsh int tcp set global ecncapability=disabled. Some routers and ISPs mishandle ECN.',
+        whenHelps: 'Can reduce packet loss on paths with broken ECN support. Evidence: debated.',
+      },
+      rss: {
+        name: 'Enable RSS (Receive Side Scaling)',
+        description: 'Runs netsh int tcp set global rss=enabled, distributing network receive processing across CPU cores.',
+        whenHelps: 'Reduces the CPU bottleneck on high-throughput NICs (1 Gbps or more). Enabled by default.',
+      },
+    },
+    gaming: {
+      disableGamedvr: {
+        name: 'Disable Game DVR (Background Recording)',
+        description: 'Disables GameDVR background recording (GameDVR_Enabled=0, AppCaptureEnabled=0, AllowGameDVR=0 policy) and keeps Game Mode enabled.',
+        whenHelps: 'Eliminates background recording overhead and frees GPU/CPU for the game. Game Mode stays on.',
+      },
+    },
+  },
+};
 
 /** Widens literal types so translations can use their own strings. */
 type Widen<T> = T extends string ? string : { [K in keyof T]: Widen<T[K]> };

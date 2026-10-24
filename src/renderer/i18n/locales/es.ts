@@ -513,4 +513,435 @@ export const es: Catalogue = {
     restorePointCreated: 'Punto de restauración creado',
     benchmarkComplete: 'Benchmark completado. Revisa los resultados.',
   },
+  tweaks: {
+    debloat: {
+      removeApps: {
+        name: 'Eliminar apps de bloatware preinstaladas',
+        description: 'Elimina paquetes Appx seleccionados (Candy Crush, Noticias, Tiempo, etc.) vía Remove-AppxPackage y Remove-AppxProvisionedPackage. Lista protegida excluida.',
+        whenHelps: 'Libera espacio en disco, reduce procesos en segundo plano, limpia el menú Inicio. Solo elimina las apps que elijas.',
+      },
+      oneDriveAutostart: {
+        name: 'Desactivar inicio automático de OneDrive',
+        description: 'Elimina OneDrive de la clave Run y desactiva el inicio automático en la configuración de OneDrive. No desinstala.',
+        whenHelps: 'Evita que OneDrive se ejecute al iniciar sesión si no se usa. Ahorra RAM/CPU.',
+      },
+      startupApps: {
+        name: 'Gestionar aplicaciones de inicio',
+        description: 'Lista y permite desactivar entradas de inicio desde claves Run, Programador de tareas y Servicios. Muestra impacto estimado.',
+        whenHelps: 'Reduce el tiempo de arranque, libera RAM. Selección interactiva en la UI.',
+      },
+      cleanTemp: {
+        name: 'Limpiar archivos temporales',
+        description: 'Limpia %TEMP%, C:\\Windows\\Temp, caché de Windows Update, miniaturas, informes de error. Previsualiza con tamaño antes de limpiar.',
+        whenHelps: 'Libera espacio en disco. Seguro, idempotente. NO limpia Prefetch (perjudica el arranque).',
+      },
+    },
+    privacy: {
+      telemetry: {
+        name: 'Establecer telemetría a Mínimo (Requerido)',
+        description: 'Establece AllowTelemetry=1 en HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection. Mínimo permitido en Home/Pro. No desactiva el servicio DiagTrack.',
+        whenHelps: 'Reduce los datos enviados a Microsoft. Nivel requerido en Home/Pro. Enterprise/Education pueden poner 0.',
+      },
+      diagTrack: {
+        name: 'Desactivar servicio DiagTrack (Experiencias de usuario conectado)',
+        description: 'Establece el inicio del servicio DiagTrack a Desactivado. Hace copia del estado original. Reduce la recopilación de telemetría.',
+        whenHelps: 'Detiene Experiencias de usuario conectado y servicio de Telemetría. Puede afectar a Feedback Hub, algunos diagnósticos.',
+      },
+      dmwappush: {
+        name: 'Desactivar dmwappushservice (Enrutamiento de mensajes WAP Push)',
+        description: 'Establece el inicio de dmwappushservice a Desactivado. Usado para notificaciones push empresariales.',
+        whenHelps: 'Reduce actividad de red en segundo plano. No necesario en dispositivos de consumo.',
+      },
+      advertisingId: {
+        name: 'Desactivar ID de publicidad',
+        description: 'Establece EnableAdvertisingId=0 en HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo. Se reinicia por usuario.',
+        whenHelps: 'Impide que las apps usen el ID de publicidad para anuncios personalizados.',
+      },
+      tailoredExperiences: {
+        name: 'Desactivar experiencias personalizadas',
+        description: 'Establece SubscribedContent-310093Enabled=0 y SubscribedContent-338387Enabled=0 en HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager.',
+        whenHelps: 'Detiene apps sugeridas, consejos y contenido personalizado en Inicio/Shell.',
+      },
+      locationTracking: {
+        name: 'Desactivar seguimiento de ubicación',
+        description: 'Establece Location=0 en HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors. Desactiva ubicación para todos los usuarios.',
+        whenHelps: 'Impide que Windows y apps accedan a la ubicación. Puede afectar a Mapas, Tiempo, Buscar mi dispositivo.',
+      },
+      cortanaWeb: {
+        name: 'Desactivar búsqueda web de Cortana / Cuadro de búsqueda',
+        description: 'Establece AllowSearchToUseLocation=0, DisableWebSearch=1, ConnectedSearchUseForm=0 en HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer.',
+        whenHelps: 'Mantiene la búsqueda local. Evita resultados web de Bing en Inicio/Búsqueda. Cortana deprecada en Win11.',
+      },
+      activityHistory: {
+        name: 'Desactivar historial de actividad (Cronología)',
+        description: 'Establece PublishUserActivities=0, UploadUserActivities=0 en HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\System.',
+        whenHelps: 'Desactiva Cronología/Vista de tareas entre dispositivos. Reduce sincronización en la nube.',
+      },
+    },
+    gpu: {
+      hags: {
+        name: 'Programación de GPU acelerada por hardware (HAGS)',
+        description: 'Establece HwSchMode=2 en HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers. Requiere un driver compatible (WDDM 2.7+) y una GPU compatible.',
+        whenHelps: 'Reduce la latencia al permitir que la GPU gestione su propia memoria. Requiere un driver compatible (NVIDIA 451.48+, AMD 20.5.1+, Intel 27.20.100.8476+).',
+      },
+      preferenceHighPerf: {
+        name: 'Establecer la preferencia de GPU de alto rendimiento para las apps',
+        description: 'Configura HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences por ejecutable para que use la GPU de alto rendimiento.',
+        whenHelps: 'Fuerza a juegos y apps concretos a usar la GPU discreta en portátiles híbridos. Anulación por app.',
+      },
+      disableFullscreenOpt: {
+        name: 'Desactivar las optimizaciones a pantalla completa',
+        description: 'Establece HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers en los ejecutables de juego para desactivar las optimizaciones a pantalla completa.',
+        whenHelps: 'Puede corregir tirones, problemas con Alt+Tab y lag de entrada en algunos juegos. Ajuste por juego.',
+      },
+      disableMpo: {
+        name: 'Desactivar Multi-Plane Overlay (MPO)',
+        description: 'Establece OverlayTestMode=5 en HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm. Desactiva MPO, que puede provocar parpadeos o desgarro de imagen con algunos drivers.',
+        whenHelps: 'Corrige parpadeos, desgarro o problemas de color en combinaciones concretas de driver y hardware. Evidencia: debatida.',
+      },
+      vrrWindowed: {
+        name: 'Activar VRR/G-Sync en juegos en ventana',
+        description: 'Establece AllowVRR=1 en HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm. Permite la frecuencia de refresco variable en modos ventana y sin bordes.',
+        whenHelps: 'Activa G-Sync/FreeSync en modo ventana sin bordes. Requiere un monitor y un driver compatibles.',
+      },
+      nvidiaLowLatency: {
+        name: 'Modo de baja latencia de NVIDIA',
+        description: 'Establece el modo de baja latencia en Ultra/Activado mediante NVAPI/DRS por aplicación y reduce la profundidad de la cola de renderizado.',
+        whenHelps: 'Reduce el lag de entrada cuando la GPU es el cuello de botella; Ultra añade un reparto estable de fotogramas. Perfil por juego.',
+      },
+      nvidiaPowerMgmt: {
+        name: 'Límite de potencia de NVIDIA: máximo rendimiento',
+        description: 'Eleva el límite de potencia de la GPU al valor máximo que admite la tarjeta (nvidia-smi -pl), para que deje de limitar por debajo de su especificación con carga sostenida. Reversible: al revertir se restaura el límite de fábrica. Requiere permisos de administrador.',
+        whenHelps: 'Juegos o renderizado sostenidos en tarjetas que limitan por potencia. No tiene efecto si la tarjeta ya está en su límite máximo.',
+      },
+      nvidiaPersistence: {
+        name: 'Modo persistencia de NVIDIA',
+        description: 'Activa el modo persistencia (nvidia-smi -pm 1) para que el driver mantenga la GPU inicializada en lugar de recargar su estado en cada llamada. Reversible.',
+        whenHelps: 'Pequeña reducción de latencia cuando muchos programas inicializan la GPU. No es compatible con todas las plataformas.',
+      },
+      nvidiaShaderCache: {
+        name: 'Tamaño de la caché de shaders de NVIDIA',
+        description: 'Establece el tamaño de la caché de shaders mediante NVAPI/DRS. Una caché más grande reduce los tirones por compilación de shaders.',
+        whenHelps: 'Reduce los tirones de la primera ejecución de los juegos a cambio de usar más espacio en disco. Por juego o global.',
+      },
+      amdAntiLag: {
+        name: 'AMD Anti-Lag',
+        description: 'Activa AMD Anti-Lag mediante ADLX/Registro. Controla el reparto de fotogramas para reducir el lag de entrada.',
+        whenHelps: 'Reduce la latencia de entrada en juegos limitados por la GPU. Funciona en la serie RX 5000 y posteriores.',
+      },
+      amdChill: {
+        name: 'AMD Radeon Chill',
+        description: 'Configura los FPS mínimos y máximos de Radeon Chill mediante ADLX y regula la tasa de fotogramas dinámicamente para ahorrar energía.',
+        whenHelps: 'Reduce la temperatura y el consumo de la GPU en escenas poco exigentes. Puede añadir latencia si se configura mal.',
+      },
+      intelPower: {
+        name: 'Máximo rendimiento de la GPU Intel',
+        description: 'Establece el plan de energía de la GPU Intel en máximo rendimiento mediante el Registro del Intel Graphics Command Center.',
+        whenHelps: 'Evita el limitado de la iGPU. Útil para Quick Sync y para juegos ligeros en la iGPU.',
+      },
+      resizableBar: {
+        name: 'Estado de Resizable BAR (solo detección)',
+        description: 'Detecta si Resizable BAR / SAM está activado en la BIOS y reconocido por Windows. No realiza ningún cambio.',
+        whenHelps: 'Muestra el estado actual. Actívalo en la BIOS para obtener posibles mejoras de rendimiento (requiere compatibilidad de CPU, GPU y placa base).',
+      },
+    },
+    power: {
+      ultimatePerformance: {
+        name: 'Activar el plan de energía de rendimiento ultimate',
+        description: 'Duplica y activa el esquema de rendimiento ultimate (GUID: e9a42b02-d5df-448d-aa00-03f14749eb61). Está oculto por defecto en los portátiles.',
+        whenHelps: 'Frecuencia máxima de CPU, sin aparcamiento de núcleos y sin gestión de energía de enlaces PCIe. Solo para sobremesas; en portátiles conviene usar Alto rendimiento.',
+      },
+      highPerformance: {
+        name: 'Activar el plan de energía de alto rendimiento',
+        description: 'Activa el esquema de alto rendimiento (GUID: 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c). Disponible en todos los formatos.',
+        whenHelps: 'Evita el limitado de la CPU y mantiene los núcleos sin aparcar. Alternativa para portátiles sin rendimiento ultimate.',
+      },
+      disableCoreParking: {
+        name: 'Desactivar el aparcamiento de núcleos de la CPU',
+        description: 'Establece Processor Performance Core Parking Min Cores al 100 % mediante powercfg y mantiene todos los núcleos activos.',
+        whenHelps: 'Reduce la latencia de activación de los núcleos y aumenta el consumo en reposo. Recomendado en sobremesas.',
+      },
+      boostMode: {
+        name: 'Modo de turbo de CPU agresivo',
+        description: 'Establece Processor Performance Boost Mode en Agresivo (1) mediante powercfg y permite frecuencias turbo más altas durante más tiempo.',
+        whenHelps: 'Mejores frecuencias sostenidas en juegos, a cambio de más calor y consumo. Recomendado en sobremesas.',
+      },
+      pcieLinkOff: {
+        name: 'Desactivar la gestión de energía de enlaces PCIe',
+        description: 'Establece PCI Express Link State Power Management en Desactivado y evita que los enlaces de GPU/SSD bajen de estado.',
+        whenHelps: 'Reduce los picos de latencia debidos al entrenamiento del enlace y aumenta el consumo en reposo. Solo en sobremesas.',
+      },
+      usbSelectiveSuspend: {
+        name: 'Desactivar la suspensión selectiva de USB',
+        description: 'Establece USB Selective Suspend Setting en Desactivado e impide que los dispositivos USB se queden sin energía.',
+        whenHelps: 'Corrige la latencia al despertar ratón/teclado y los cortes de las interfaces de audio. Aumenta ligeramente el consumo de batería en portátiles.',
+      },
+      hibernateOff: {
+        name: 'Desactivar la hibernación (eliminar hiberfil.sys)',
+        description: 'Ejecuta powercfg /hibernate off y elimina hiberfil.sys, liberando en disco el tamaño de la RAM. Desactiva el inicio rápido.',
+        whenHelps: 'Libera espacio en disco (8-64 GB), necesario para algunas herramientas de imagen de disco. Desactiva el inicio rápido.',
+      },
+      fastStartupOff: {
+        name: 'Desactivar el inicio rápido (arranque híbrido)',
+        description: 'Establece HiberbootEnabled=0 en HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power y realiza siempre un arranque completo en frío.',
+        whenHelps: 'Corrige problemas de arranque dual, de carga de drivers y las solicitudes de BitLocker. El arranque es algo más lento.',
+      },
+    },
+    storage: {
+      disableLastAccess: {
+        name: 'Desactivar la actualización de la marca de tiempo de último acceso',
+        description: 'Ejecuta fsutil behavior set disablelastaccess 1 e impide que NTFS actualice la hora del último acceso al leer archivos.',
+        whenHelps: 'Reduce las escrituras de metadatos al leer. Pequeña mejora en HDD y negligible en SSD.',
+      },
+      trimStatus: {
+        name: 'Estado de TRIM y activación',
+        description: 'Consulta DisableDeleteNotify (0 = TRIM activado) y lo establece en 0 si está desactivado. Solo SSD.',
+        whenHelps: 'Garantiza que TRIM esté activo para el rendimiento y la durabilidad del SSD. Está activado por defecto.',
+      },
+      optimizeVolumes: {
+        name: 'Optimizar volúmenes (desfragmentar HDD / TRIM en SSD)',
+        description: 'Ejecuta Optimize-Volume en todas las unidades fijas, usando desfragmentación en HDD y TRIM/Retrim en SSD.',
+        whenHelps: 'Mantiene el rendimiento de las unidades. Es seguro y está programado por defecto; ejecútalo manualmente para un efecto inmediato.',
+      },
+      smartStatus: {
+        name: 'Comprobación del estado de salud SMART',
+        description: 'Lee los datos SMART de todas las unidades: salud, temperatura y sectores reasignados. Solo lectura.',
+        whenHelps: 'Aviso temprano de fallos de la unidad. No realiza ningún cambio.',
+      },
+    },
+    ram: {
+      memoryCompression: {
+        name: 'Activar la compresión de memoria',
+        description: 'Garantiza que la compresión de memoria esté activada (activada por defecto) y comprime las páginas de memoria en lugar de llevarlas al disco.',
+        whenHelps: 'Reduce el uso del archivo de paginación y mejora la respuesta bajo presión de memoria. Activada por defecto.',
+      },
+      pagefileSystem: {
+        name: 'Establecer el archivo de paginación a tamaño gestionado por el sistema',
+        description: 'Establece el archivo de paginación como "Tamaño gestionado por el sistema" en todas las unidades. Recomendado para la estabilidad.',
+        whenHelps: 'Evita caídas por falta de memoria. Windows ajusta el tamaño dinámicamente; usa un tamaño personalizado solo para cargas concretas.',
+      },
+      clearStandby: {
+        name: 'Vaciar la lista en espera (EmptyStandbyList)',
+        description: 'Ejecuta EmptyStandbyList.exe (herramienta externa) para vaciar las páginas modificadas y en espera. Avanzado y solo manual. Evidencia: debatida.',
+        whenHelps: 'Libera la RAM que aparece como "Caché", pero puede provocar tirones al releer las apps del disco. Úsalo solo si hay presión de memoria.',
+      },
+      infoReport: {
+        name: 'Informe de configuración de RAM',
+        description: 'Informe con la RAM total, la velocidad, el tipo (DDR4/5), los canales y las latencias. Diagnóstico de solo lectura.',
+        whenHelps: 'Comprueba que la RAM funciona a su velocidad nominal (XMP/EXPO) y detecta las configuraciones de un solo canal.',
+      },
+    },
+    peripherals: {
+      mouseQueue: {
+        name: 'Tamaño de la cola de datos del ratón (mouclass)',
+        description: 'Establece MouseDataQueueSize en HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters. El valor por defecto es 100 (0x64). Reducirlo a 20 no está probado y puede perder eventos en ratones de 8 kHz. Avanzado, desactivado por defecto.',
+        whenHelps: 'Reduce teóricamente la latencia de entrada, con riesgo de perder eventos del ratón. Evidencia: placebo/debatida. Se recomienda una prueba A/B.',
+      },
+      keyboardQueue: {
+        name: 'Tamaño de la cola de datos del teclado (kbdclass)',
+        description: 'Establece KeyboardDataQueueSize en HKLM\\SYSTEM\\CurrentControlSet\\Services\\kbdclass\\Parameters. El valor por defecto es 100, con las mismas advertencias que la cola del ratón.',
+        whenHelps: 'Reducción teórica de la latencia, con riesgo de perder pulsaciones. Evidencia: placebo.',
+      },
+      msiModeGpu: {
+        name: 'Modo MSI para la GPU (interrupciones señalizadas por mensaje)',
+        description: 'Activa MSI para la GPU mediante el Registro: HKLM\\SYSTEM\\CurrentControlSet\\Enum\\PCI\\<dispositivo>\\<instancia>\\Device Parameters\\Interrupt Management\\MessageSignaledInterruptProperties -> MSISupported=1. Requiere un dispositivo compatible y reinicio. Riesgo moderado.',
+        whenHelps: 'Reduce la latencia de interrupciones de la GPU y puede mejorar el reparto de fotogramas. El dispositivo debe admitir MSI.',
+      },
+      msiModeNetwork: {
+        name: 'Modo MSI para el adaptador de red',
+        description: 'Activa MSI para el adaptador de red principal, al igual que en la GPU, para reducir la latencia de las interrupciones de red.',
+        whenHelps: 'Puede reducir la latencia DPC debida a las interrupciones de red. Requiere una tarjeta de red compatible.',
+      },
+      interruptAffinity: {
+        name: 'Política de afinidad de interrupciones (prioridad del dispositivo)',
+        description: 'Establece DevicePriority en ...\\Interrupt Management\\Affinity Policy. 1=Baja, 2=Normal, 3=Alta. Asigna las interrupciones a núcleos concretos de la CPU. Avanzado y por dispositivo.',
+        whenHelps: 'Puede aislar las interrupciones en núcleos concretos. Es complejo y requiere pruebas; una mala configuración puede inestabilizar el sistema.',
+      },
+      hpetOff: {
+        name: 'Desactivar HPET (usar TSC/TSC invariante)',
+        description: 'Establece UsePlatformClock=No mediante bcdedit y obliga a Windows a usar el TSC en lugar del HPET. Puede mejorar la consistencia del temporizador en CPUs modernas.',
+        whenHelps: 'Reduce la dispersión del temporizador en sistemas donde el HPET es más lento que el TSC. Requiere TSC invariante (la mayoría de las CPU desde ~2010).',
+      },
+      dynamicTickDisable: {
+        name: 'Desactivar el tick dinámico (kernel sin ticks)',
+        description: 'Establece disabledynamictick=Yes mediante bcdedit y obliga a un tick periódico del temporizador. Puede reducir la variación del temporizador en audio y tiempo real.',
+        whenHelps: 'Puede mejorar la consistencia de la latencia DPC y aumenta el consumo de energía. Evidencia: debatida.',
+      },
+      usbPolling: {
+        name: 'Detección de la tasa de sondeo USB',
+        description: 'Detecta la tasa de sondeo USB actual de los dispositivos HID. 125 Hz por defecto y 1000 Hz o más en ratones gaming. Solo lectura.',
+        whenHelps: 'Comprueba que el ratón y el teclado funcionan a la tasa de sondeo esperada. Cámbiala con el software del dispositivo, no con Windows.',
+      },
+      mouseAccelOff: {
+        name: 'Desactivar la aceleración del ratón (mejorar la precisión del puntero)',
+        description: 'Establece MouseSpeed=0, MouseThreshold1=0 y MouseThreshold2=0 y desactiva "Mejorar la precisión del puntero".',
+        whenHelps: 'Movimiento bruto 1:1 del ratón, esencial para FPS competitivos. No afecta a la sensibilidad.',
+      },
+    },
+    services: {
+      sysmainManual: {
+        name: 'Servicio SysMain (Superfetch) a manual',
+        description: 'Establece el servicio SysMain con inicio manual. Precarga apps en la RAM; desactívalo en SSD y déjalo en manual en HDD.',
+        whenHelps: 'Reduce el uso del disco en SSD; en HDD, el inicio manual permite la precarga bajo demanda. Por defecto: automático.',
+      },
+      wsearchManual: {
+        name: 'Búsqueda de Windows a manual',
+        description: 'Establece el servicio WSearch en manual. Indexa los archivos para una búsqueda rápida; desactívalo si usas Everything u otra herramienta de búsqueda de terceros.',
+        whenHelps: 'Reduce el uso de CPU y disco de la indexación. La búsqueda sigue funcionando, pero es más lenta en las ubicaciones no indexadas.',
+      },
+      spoolerManual: {
+        name: 'Cola de impresión a manual',
+        description: 'Establece el servicio Spooler en manual. Solo es necesario al imprimir; desactívalo si no tienes ninguna impresora conectada.',
+        whenHelps: 'Reduce la superficie de ataque (PrintNightmare) y libera RAM. Actívalo manualmente cuando necesites imprimir.',
+      },
+      faxDisabled: {
+        name: 'Desactivar el servicio de fax',
+        description: 'Establece el servicio Fax como desactivado. Funcionalidad de fax heredada, innecesaria en los sistemas actuales.',
+        whenHelps: 'Reduce la superficie de ataque y libera una pequeña cantidad de RAM. Sin inconvenientes si no usas un módem de fax.',
+      },
+      remoteRegistryDisabled: {
+        name: 'Desactivar el Registro remoto',
+        description: 'Establece el servicio RemoteRegistry como desactivado y bloquea el acceso remoto al Registro como medida de refuerzo de la seguridad.',
+        whenHelps: 'Impide la manipulación remota del Registro. Sin inconvenientes en equipos de un solo usuario.',
+      },
+      mapsDisabled: {
+        name: 'Desactivar el gestor de mapas descargados',
+        description: 'Establece el servicio MapsBroker como desactivado. Gestiona los mapas sin conexión y no es necesario si no usas los mapas sin conexión de Windows.',
+        whenHelps: 'Libera RAM y CPU. Sin inconvenientes si no usas mapas sin conexión.',
+      },
+      xboxManual: {
+        name: 'Servicios de Xbox a manual',
+        description: 'Establece XboxLiveAuthManager, XboxLiveGameSave y XboxNetApiSvc en manual. Solo son necesarios para Xbox Game Bar y Game Pass.',
+        whenHelps: 'Reduce los procesos en segundo plano si no usas las funciones de Xbox. Es posible que Game Bar deje de funcionar.',
+      },
+      bluetoothManual: {
+        name: 'Compatibilidad de Bluetooth a manual',
+        description: 'Establece bthserv en manual. Solo es necesario para dispositivos Bluetooth; desactívalo si el equipo no tiene hardware Bluetooth.',
+        whenHelps: 'Libera RAM y CPU. Sin inconvenientes si no hay hardware Bluetooth.',
+      },
+      wuManual: {
+        name: 'Windows Update a manual (NO desactivado)',
+        description: 'Establece wuauserv en manual, lo que sigue permitiendo comprobaciones manuales de actualizaciones. Nunca lo desactives: es crítico para la seguridad y con el inicio manual tú controlas el momento.',
+        whenHelps: 'Evita reinicios forzados durante las partidas. Tú decides cuándo comprobar e instalar, y las actualizaciones de seguridad siguen siendo posibles.',
+      },
+      listReport: {
+        name: 'Informe de configuración de servicios',
+        description: 'Lista todos los servicios con su tipo de inicio, su estado y su descripción. Diagnóstico de solo lectura.',
+        whenHelps: 'Audita el estado actual de los servicios e identifica los que están en marcha sin necesidad.',
+      },
+    },
+    explorer: {
+      showExtensions: {
+        name: 'Mostrar las extensiones de archivo',
+        description: 'Establece HideFileExt=0 en HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced y muestra las extensiones de los tipos de archivo conocidos.',
+        whenHelps: 'Seguridad: evita el camuflaje de malware.exe.txt. Imprescindible para desarrolladores.',
+      },
+      showHidden: {
+        name: 'Mostrar archivos y carpetas ocultos',
+        description: 'Establece Hidden=1 en HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced y muestra los archivos ocultos, pero no los protegidos por el sistema.',
+        whenHelps: 'Da acceso a archivos de configuración, AppData y ubicaciones similares. No muestra los archivos del sistema protegidos.',
+      },
+      showProtected: {
+        name: 'Mostrar los archivos protegidos del sistema operativo',
+        description: 'Establece ShowSuperHidden=1 en HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced y muestra los archivos críticos del sistema. Avanzado.',
+        whenHelps: 'Para la resolución avanzada de problemas, con riesgo de borrado accidental. Úsalo con precaución.',
+      },
+      disableThumbnails: {
+        name: 'Desactivar miniaturas (solo mostrar iconos)',
+        description: 'Establece IconsOnly=1 en HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced y desactiva las vistas previas en miniatura.',
+        whenHelps: 'Carga las carpetas más rápido en discos lentos, reduce las E/S de disco y libera espacio de la caché de miniaturas.',
+      },
+      separateProcess: {
+        name: 'Abrir las ventanas de carpeta en procesos separados',
+        description: 'Establece SeparateProcess=1 en HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced, de modo que cada ventana del Explorador se ejecute en su propio proceso.',
+        whenHelps: 'Un error en una ventana no hace caer a todas: mayor estabilidad y algo más de RAM.',
+      },
+      disableStartWeb: {
+        name: 'Desactivar la búsqueda web en el menú Inicio',
+        description: 'Establece DisableSearchBoxSuggestions=1 en HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer y elimina los resultados web de Bing de Inicio.',
+        whenHelps: 'Menú Inicio más limpio, con solo búsqueda local, y una mejora de privacidad.',
+      },
+      classicContextMenu: {
+        name: 'Menú contextual clásico (Windows 11)',
+        description: 'Vacía el valor predeterminado de HKCU\\Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\\InprocServer32 para restaurar el menú contextual completo sin "Mostrar más opciones".',
+        whenHelps: 'Acceso más rápido a todos los elementos del menú contextual. Solo en Windows 11. Requiere reiniciar el Explorador.',
+      },
+      disableNotifications: {
+        name: 'Desactivar el centro de notificaciones (centro de actividades)',
+        description: 'Establece HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer\\DisableNotificationCenter=1 y oculta el icono y el panel del centro de notificaciones.',
+        whenHelps: 'Elimina distracciones y deja la barra de tareas más limpia. El asistente de concentración sigue disponible.',
+      },
+      taskbarSmall: {
+        name: 'Iconos pequeños de la barra de tareas / no combinar (Win11)',
+        description: 'Windows 10: TaskbarSmallIcons=1. Windows 11: usa ExplorerPatcher o ajustes de Registro para no combinar los botones. Requiere reiniciar el Explorador.',
+        whenHelps: 'Más espacio en la barra de tareas. Windows 11 muestra etiquetas y nunca combina; Windows 10 usa botones más pequeños.',
+      },
+      disableTaskbarAnim: {
+        name: 'Desactivar las animaciones de la barra de tareas',
+        description: 'Establece TaskbarAnimations=0 en HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced y desactiva las animaciones al pasar el cursor o al hacer clic.',
+        whenHelps: 'Sensación más inmediata y menor latencia visual. Accesibilidad: respeta prefers-reduced-motion.',
+      },
+      disableWindowAnim: {
+        name: 'Desactivar las animaciones de minimizar y maximizar ventanas',
+        description: 'Establece MinAnimate=0 en HKCU\\Control Panel\\Desktop\\WindowMetrics y desactiva las animaciones de ventana.',
+        whenHelps: 'Las ventanas se abren y se cierran al instante, con una interfaz más ágil. Compatible con la accesibilidad.',
+      },
+      disableSnap: {
+        name: 'Desactivar Snap Assist y los diseños de acoplamiento',
+        description: 'Establece SnapAssist=0 en HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced y desactiva el acoplamiento al arrastrar y los diseños de Windows 11.',
+        whenHelps: 'Evita el acoplamiento accidental y ofrece una gestión de ventanas más limpia para quienes usan gestores en mosaico.',
+      },
+    },
+    system: {
+      win32priorityseparation: {
+        name: 'Aumento de prioridad de la aplicación en primer plano',
+        description: 'Aumenta las rodajas de tiempo de CPU para las aplicaciones en primer plano (Win32PrioritySeparation = 0x26). El valor predeterminado es 2 (cuántums cortos); 0x26 = 38 da cuántums más largos a las apps en primer plano.',
+        whenHelps: 'Mejora la respuesta de la ventana activa, especialmente en CPUs antiguas o con una carga pesada en segundo plano.',
+      },
+      systemresponsiveness: {
+        name: 'Respuesta del sistema MMCSS',
+        description: 'Establece SystemResponsiveness en 10 (por defecto 20) en el perfil de sistema multimedia. Los valores más bajos dan más CPU a las tareas multimedia.',
+        whenHelps: 'Reduce los fallos de audio y vídeo bajo carga, pero puede reducir ligeramente el rendimiento de las tareas en segundo plano.',
+      },
+      mmcssGames: {
+        name: 'Optimización de la tarea MMCSS Games',
+        description: 'Optimiza la tarea MMCSS Games: GPU Priority=8, Priority=6, Scheduling Category=High, SFIO Priority=High.',
+        whenHelps: 'Otorga a los juegos una prioridad de planificación superior de CPU/GPU y una mejor prioridad de E/S.',
+      },
+      networkthrottling: {
+        name: 'Desactivar la limitación de red para multimedia',
+        description: 'Establece NetworkThrottlingIndex en 0xFFFFFFFF (desactivado) e impide que Windows limite el tráfico de red durante la reproducción multimedia.',
+        whenHelps: 'Reduce la pérdida de paquetes y el jitter al jugar o hacer streaming con conexiones de alto ancho de banda.',
+      },
+    },
+    network: {
+      disableNagle: {
+        name: 'Desactivar el algoritmo de Nagle (TCPNoDelay)',
+        description: 'Establece TcpAckFrequency=1, TCPNoDelay=1 y TcpDelAckTicks=0 en las interfaces de red activas, forzando confirmaciones inmediatas y desactivando la confirmación retardada.',
+        whenHelps: 'Puede reducir la latencia en juegos y SSH, pero puede aumentar el uso de CPU y el número de paquetes. Evidencia: debatida.',
+      },
+      tcpAutotuning: {
+        name: 'Nivel de autoajuste de TCP en normal',
+        description: 'Ejecuta netsh int tcp set global autotuninglevel=normal y permite el escalado dinámico de la ventana de recepción.',
+        whenHelps: 'Mejora el rendimiento en enlaces de alta latencia y alto ancho de banda. "Normal" es el valor por defecto; "desactivado" perjudica el rendimiento.',
+      },
+      ecn: {
+        name: 'Desactivar ECN (notificación explícita de congestión)',
+        description: 'Ejecuta netsh int tcp set global ecncapability=disabled. Algunos routers o proveedores de Internet manejan mal ECN.',
+        whenHelps: 'Puede reducir la pérdida de paquetes en rutas con soporte ECN defectuoso. Evidencia: debatida.',
+      },
+      rss: {
+        name: 'Activar RSS (escalado lateral de recepción)',
+        description: 'Ejecuta netsh int tcp set global rss=enabled y distribuye el procesamiento de recepción de red entre los núcleos de la CPU.',
+        whenHelps: 'Reduce el cuello de botella de CPU en tarjetas de red de alto rendimiento (1 Gbps o más). Activado por defecto.',
+      },
+    },
+    gaming: {
+      disableGamedvr: {
+        name: 'Desactivar Game DVR (grabación en segundo plano)',
+        description: 'Desactiva la grabación en segundo plano de GameDVR (GameDVR_Enabled=0, AppCaptureEnabled=0 y la directiva AllowGameDVR=0) y mantiene el modo juego activado.',
+        whenHelps: 'Elimina la sobrecarga de la grabación en segundo plano y libera GPU/CPU para el juego. El modo juego sigue activado.',
+      },
+    },
+  },
 };

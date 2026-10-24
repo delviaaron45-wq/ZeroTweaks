@@ -1,6 +1,7 @@
 // Tweaks Store - Zustand
 import { create } from 'zustand';
 import type { Tweak, TweakState, TweakResult, Profile, BackupManifest, JournalEntry } from '../../shared/types/all';
+import { useSettingsStore } from './settingsStore';
 
 interface TweaksState {
   tweaks: Tweak[];
@@ -9,15 +10,13 @@ interface TweaksState {
   isLoading: boolean;
   error: string | null;
   selectedTweakIds: string[];
-  dryRun: boolean;
-  
+
   fetchTweaks: () => Promise<void>;
   filterTweaks: (filter: { category?: string; risk?: string; evidence?: string; impacto?: string; search?: string }) => void;
   detectTweak: (tweakId: string) => Promise<TweakState>;
   applyTweak: (tweakId: string) => Promise<TweakResult>;
   revertTweak: (tweakId: string, originalState: TweakState) => Promise<TweakResult>;
   verifyTweak: (tweakId: string, expectedState: TweakState) => Promise<boolean>;
-  setDryRun: (enabled: boolean) => void;
   toggleTweakSelection: (tweakId: string) => void;
   selectAllVisible: () => void;
   clearSelection: () => void;
@@ -30,7 +29,6 @@ export const useTweaksStore = create<TweaksState>((set, get) => ({
   isLoading: true,
   error: null,
   selectedTweakIds: [],
-  dryRun: true,
 
   fetchTweaks: async () => {
     set({ isLoading: true, error: null });
@@ -79,7 +77,9 @@ export const useTweaksStore = create<TweaksState>((set, get) => ({
   },
 
   applyTweak: async (tweakId) => {
-    const { dryRun } = get();
+    // Single source of truth: the "dry-run" setting in Settings. When it is on,
+    // every apply() only reports what it would change.
+    const dryRun = useSettingsStore.getState().dryRunDefault;
     const result = await window.zerotweaks.tweaks['tweak:apply'](tweakId, { dryRun });
     if (result.ok && result.newState) {
       set(state => ({
@@ -108,8 +108,6 @@ export const useTweaksStore = create<TweaksState>((set, get) => ({
   verifyTweak: async (tweakId, expectedState) => {
     return window.zerotweaks.tweaks['tweak:verify'](tweakId, expectedState);
   },
-
-  setDryRun: (enabled) => set({ dryRun: enabled }),
 
   toggleTweakSelection: (tweakId) => set(state => ({
     selectedTweakIds: state.selectedTweakIds.includes(tweakId)

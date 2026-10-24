@@ -1,14 +1,30 @@
 // Core shared types for ZeroTweaks
 export interface Tweak {
   id: string;
+  /** Display name (fallback if i18n key not provided/translated). */
   name: string;
+  /** i18n key for the tweak name (e.g. 'tweaks.debloat.removeApps.name'). */
+  nameKey?: string;
   category: TweakCategory;
+  /** Description (fallback). */
   description: string;
+  /** i18n key for description. */
+  descriptionKey?: string;
+  /** When this tweak helps (fallback). */
   whenHelps: string;
+  /** i18n key for whenHelps. */
+  whenHelpsKey?: string;
   risk: RiskLevel;
   evidence: EvidenceLevel;
   /** Expected impact on this machine. ALTO/MEDIO/BAJO. */
   impacto: ImpactLevel;
+  /**
+   * When set, the tweak cannot be applied with the current build/environment
+   * (missing native vendor API, external tool, etc.). The UI shows it as
+   * unavailable and disables Apply instead of offering an action that would
+   * only fail. The text explains why.
+   */
+  unavailableReason?: string;
   requiresReboot: boolean;
   compatibility: Compatibility;
   detect: () => Promise<TweakState>;

@@ -60,7 +60,11 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, 'src/renderer'),
       '@shared': path.resolve(__dirname, 'src/shared')
-    }
+    },
+    // Resolve TypeScript sources before any `.js`: Vite's default order puts
+    // `.js` first, so a stray compiled file next to a `.ts` (e.g. a leftover
+    // `src/shared/tweaks/debloat.js`) would silently win over its source.
+    extensions: ['.ts', '.tsx', '.mts', '.mjs', '.js', '.jsx', '.json']
   },
   server: {
     port: 5173,
